@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+
+    /* Phone Frame */
+    .phone-frame {
+      width: 393px;
+      height: 852px;
+      background: #000;
+      border-radius: 55px;
+      padding: 12px;
+      position: relative;
+      box-shadow:
+        0 0 0 2px #333,
+        0 0 0 4px #111,
+        0 30px 60px -15px rgba(0, 0, 0, 0.8),
+        0 0 120px -20px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    /* Screen */
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      border-radius: 44px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Dynamic Island */
+    .dynamic-island {
+      position: absolute;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 126px;
+      height: 37px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 100;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .dynamic-island.expanded {
+      width: 360px;
+      height: 80px;
+      border-radius: 32px;
+    }
+
+    .dynamic-island-content {
+      opacity: 0;
+      transition: opacity 0.3s ease 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 100%;
+    }
+
+    .dynamic-island.expanded .dynamic-island-content {
+      opacity: 1;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 54px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 32px 0;
+      z-index: 90;
+      pointer-events: none;
+    }
+
+    /* Home Indicator */
+    .home-indicator {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 134px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 100px;
+      z-index: 100;
+    }
+
+    /* Scrollable Content */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 60px 20px 100px;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .content-area::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Glass Effects */
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-light {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .glass-dark {
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Haptic Animation */
+    .haptic {
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .haptic:active {
+      transform: scale(0.95);
+    }
+
+    /* Section Transitions */
+    .section {
+      display: none;
+      animation: fadeSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Tab Bar */
+    .tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 20px 30px;
+      z-index: 80;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .tab-item.active {
+      color: #fff;
+    }
+
+    .tab-item:not(.active) {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .tab-item.active::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    /* Toggle Switch */
+    .toggle {
+      width: 51px;
+      height: 31px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.15);
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .toggle.active {
+      background: #34c759;
+    }
+
+    .toggle-knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 27px;
+      height: 27px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .toggle.active .toggle-knob {
+      transform: translateX(20px);
+    }
+
+    /* Progress Ring */
+    .progress-ring {
+      transform: rotate(-90deg);
+    }
+
+    .progress-ring-circle {
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    /* Notification Badge */
+    .badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      background: #ff3b30;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px;
+    }
+
+    /* Widget Card Hover */
+    .widget-card {
+      transition: all 0.2s ease;
+    }
+
+    .widget-card:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Smooth Scroll */
+    .smooth-scroll {
+      scroll-behavior: smooth;
+    }
+
+    /* Model Badge */
+    .model-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 16px;
+    }
+
+    .model-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #34c759;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Calendar Day Grid */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .calendar-day:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .calendar-day.today {
+      background: #007AFF;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .calendar-day.selected {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Smart Home Device Card */
+    .device-card {
+      transition: all 0.2s ease;
+    }
+
+    .device-card:active {
+      transform: scale(0.97);
+    }
+
+    /* Wallet Card */
+    .wallet-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .wallet-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: shimmer 8s linear infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Settings Row */
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .settings-row:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .settings-row:last-child {
+      border-bottom: none;
+    }
+
+    /* Message Bubble */
+    .message-bubble {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      animation: messageIn 0.3s ease;
+    }
+
+    .message-sent {
+      background: #007AFF;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+      margin-left: auto;
+    }
+
+    .message-received {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-bottom-left-radius: 4px;
+    }
+
+    @keyframes messageIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Quick Action Button */
+    .quick-action {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .quick-action:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .quick-action-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Notification Card */
+    .notification-card {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      animation: slideIn 0.4s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 430px) {
+      .phone-frame {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        padding: 0;
+      }
+      
+      .phone-screen {
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="text-white text-sm font-semibold" id="status-time">9:41</div>
+        <div class="flex items-center gap-1.5">
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+            <path d="M1 4C1 2.89543 1.89543 2 3 2H13C14.1046 2 15 2.89543 15 4V8C15 9.10457 14.1046 10 13 10H3C1.89543 10 1 9.10457 1 8V4Z" stroke="white" stroke-width="1.5"/>
+            <path d="M6 6H10" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+            <path d="M2 8C2 8 3 6 5 6C7 6 8 8 8 8" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M8 8C8 8 9 6 11 6C13 6 14 8 14 8" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="11" rx="2.5" stroke="white" stroke-opacity="0.35"/>
+            <rect x="2" y="2" width="17" height="8" rx="1.5" fill="white"/>
+            <path d="M23 4V8" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Dynamic Island -->
+      <div class="dynamic-island" id="dynamicIsland">
+        <div class="dynamic-island-content">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1L10 6H15L11 9L12.5 14L8 11L3.5 14L5 9L1 6H6L8 1Z" fill="white"/>
+              </svg>
+            </div>
+            <div>
+              <div class="text-white text-xs font-semibold">Now Playing</div>
+              <div class="text-gray-400 text-[10px]">Chill Vibes • Playlist</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="text-white" onclick="event.stopPropagation()">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M11 5L6 10L11 15V5Z" fill="white"/>
+                <path d="M14 5L9 10L14 15V5Z" fill="white"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="content-area" id="contentArea">
+        <!-- Model Badge -->
+        <div class="flex justify-center">
+          <div class="model-badge">
+            <div class="model-badge-dot"></div>
+            <span>Qwen 3.6:27b local</span>
+          </div>
+        </div>
+
+        <!-- Today Section -->
+        <div class="section active" id="section-today">
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-white mb-1">Good Morning</h1>
+            <p class="text-gray-400 text-sm" id="greeting-date">Tuesday, January 16</p>
+          </div>
+
+          <!-- Weather Widget -->
+          <div class="glass rounded-3xl p-5 mb-4 widget-card haptic">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <div class="text-gray-400 text-xs font-medium uppercase tracking-wider">Current</div>
+                <div class="text-5xl font-thin text-white mt-1">72°</div>
+                <div class="text-gray-300 text-sm mt-1">Mostly Clear</div>
+              </div>
+              <div class="text-right">
+                <div class="text-4xl">☀️</div>
+              </div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-400">
+              <div>H:78°</div>
+              <div>L:65°</div>
+              <div>Humidity: 45%</div>
+            </div>
+          </div>
+
+          <!-- Activity Ring -->
+          <div class="glass rounded-3xl p-5 mb-4 widget-card haptic">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-white font-semibold">Activity</div>
+              <div class="text-gray-400 text-xs">Today</div>
+            </div>
+            <div class="flex items-center justify-center mb-4">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#ff3b30" stroke-width="8" stroke-dasharray="314" stroke-dashoffset="78" stroke-linecap="round" class="progress-ring-circle"/>
+                <circle cx="60" cy="60" r="38" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                <circle cx="60" cy="60" r="38" fill="none" stroke="#34c759" stroke-width="8" stroke-dasharray="239" stroke-dashoffset="95" stroke-linecap="round" class="progress-ring-circle"/>
+                <circle cx="60" cy="60" r="26" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                <circle cx="60" cy="60" r="26" fill="none" stroke="#007aff" stroke-width="8" stroke-dasharray="163" stroke-dashoffset="49" stroke-linecap="round" class="progress-ring-circle"/>
+              </svg>
+            </div>
+            <div class="flex justify-center gap-6 text-xs">
+              <div class="flex items-center gap-1">
+                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                <span class="text-gray-300">Move</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                <span class="text-gray-300">Exercise</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                <span class="text-gray-300">Stand</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="mb-4">
+            <h2 class="text-white font-semibold mb-3">Quick Actions</h2>
+            <div class="grid grid-cols-4 gap-3">
+              <div class="quick-action haptic" onclick="toggleQuickAction(this)">
+                <div class="quick-action-icon bg-blue-500">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2L12 7H17L13 10L14.5 15L10 12L5.5 15L7 10L3 7H8L10 2Z" fill="white"/>
+                  </svg>
+                </div>
+                <span class="text-white text-xs">Focus</span>
+              </div>
+              <div class="quick-action haptic" onclick="toggleQuickAction(this)">
+                <div class="quick-action-icon bg-orange-500">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="7" stroke="white" stroke-width="2"/>
+                    <path d="M10 6V10L13 13" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <span class="text-white text-xs">Timer</span>
+              </div>
+              <div class="quick-action haptic" onclick="toggleQuickAction(this)">
+                <div class="quick-action-icon bg-purple-500">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 4H16V16H4V4Z" stroke="white" stroke-width="2"/>
+                    <path d="M8 8H12V12H8V8Z" fill="white"/>
+                  </svg>
+                </div>
+                <span class="text-white text-xs">Camera</span>
+              </div>
+              <div class="quick-action haptic" onclick="toggleQuickAction(this)">
+                <div class="quick-action-icon bg-green-500">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2L12 7H17L13 10L14.5 15L10 12L5.5 15L7 10L3 7H8L10 2Z" fill="white"/>
+                  </svg>
+                </div>
+                <span class="text-white text-xs">Notes</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="mb-4">
+            <h2 class="text-white font-semibold mb-3">Notifications</h2>
+            <div class="notification-card">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center flex-shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2C6.68629 2 4 4.68629 4 8V11L2 13V16H18V13L16 11V8C16 4.68629 13.3137 2 10 2Z" fill="white"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <div class="flex justify-between items-start">
+                    <div class="text-white font-semibold text-sm">Messages</div>
+                    <div class="text-gray-400 text-xs">2m ago</div>
+                  </div>
+                  <div class="text-gray-300 text-xs mt-1">Hey! Are we still on for lunch today?</div>
+                </div>
+              </div>
+            </div>
+            <div class="notification-card">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 4H16V16H4V4Z" stroke="white" stroke-width="2"/>
+                    <path d="M8 8H12V12H8V8Z" fill="white"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <div class="flex justify-between items-start">
+                    <div class="text-white font-semibold text-sm">Calendar</div>
+                    <div class="text-gray-400 text-xs">15m ago</div>
+                  </div>
+                  <div class="text-gray-300 text-xs mt-1">Team standup in 15 minutes</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calendar Section -->
+        <div class="section" id="section-calendar">
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-white mb-1">Calendar</h1>
+            <p class="text-gray-400 text-sm">Your schedule at a glance</p>
+          </div>
+
+          <!-- Calendar Grid -->
+          <div class="glass rounded-3xl p-4 mb-4">
+            <div class="flex justify-between items-center mb-4">
+              <div class="text-white font-semibold">January 2024</div>
+              <div class="flex gap-2">
+                <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">‹</button>
+                <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">›</button>
+              </div>
+            </div>
+            <div class="calendar-grid mb-2">
+              <div class="text-gray-400 text-xs font-medium">S</div>
+              <div class="text-gray-400 text-xs font-medium">M</div>
+              <div class="text-gray-400 text-xs font-medium">T</div>
+              <div class="text-gray-400 text-xs font-medium">W</div>
+              <div class="text-gray-400 text-xs font-medium">T</div>
+              <div class="text-gray-400 text-xs font-medium">F</div>
+              <div class="text-gray-400 text-xs font-medium">S</div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid">
+              <!-- Generated by JS -->
+            </div>
+          </div>
+
+          <!-- Today's Events -->
+          <div class="mb-4">
+            <h2 class="text-white font-semibold mb-3">Today's Events</h2>
+            <div class="space-y-3">
+              <div class="glass rounded-2xl p-4 haptic">
+                <div class="flex items-center gap-3">
+                  <div class="w-1 h-12 bg-blue-500 rounded-full"></div>
+                  <div class="flex-1">
+                    <div class="text-white font-semibold">Team Standup</div>
+                    <div class="text-gray-400 text-xs mt-1">9:00 AM - 9:30 AM</div>
+                    <div class="text-gray-500 text-xs mt-1">Zoom Meeting</div>
+                  </div>
+                </div>
+              </div>
+              <div class="glass rounded-2xl p-4 haptic">
+                <div class="flex items-center gap-3">
+                  <div class="w-1 h-12 bg-green-500 rounded-full"></div>
+                  <div class="flex-1">
+                    <div class="text-white font-semibold">Lunch with Sarah</div>
+                    <div class="text-gray-400 text-xs mt-1">12:00 PM - 1:00 PM</div>
+                    <div class="text-gray-500 text-xs mt-1">Restaurant Downtown</div>
+                  </div>
+                </div>
+              </div>
+              <div class="glass rounded-2xl p-4 haptic">
+                <div class="flex items-center gap-3">
+                  <div class="w-1 h-12 bg-purple-500 rounded-full"></div>
+                  <div class="flex-1">
+                    <div class="text-white font-semibold">Project Review</div>
+                    <div class="text-gray-400 text-xs mt-1">3:00 PM - 4:00 PM</div>
+                    <div class="text-gray-500 text-xs mt-1">Conference Room B</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages Section -->
+        <div class="section" id="section-messages">
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-white mb-1">Messages</h1>
+            <p class="text-gray-400 text-sm">Your conversations</p>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="glass rounded-2xl p-3 mb-4 flex items-center gap-3">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="7" cy="7" r="5" stroke="#9CA3AF" stroke-width="2"/>
+              <path d="M11 11L14 14" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <input type="text" placeholder="Search" class="bg-transparent border-none outline-none text-white text-sm flex-1 placeholder-gray-500">
+          </div>
+
+          <!-- Message List -->
+          <div class="space-y-2">
+            <div class="glass rounded-2xl p-4 haptic flex items-center gap-3">
+              <div class="relative">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">A</div>
+                <div class="badge">2</div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-baseline">
+                  <div class="text-white font-semibold text-sm">Alex Morgan</div>
+                  <div class="text-gray-400 text-xs">9:41 AM</div>
+                </div>
+                <div class="text-gray-300 text-xs mt-1 truncate">Hey! Are we still on for lunch today?</div>
+              </div>
+            </div>
+
+            <div class="glass rounded-2xl p-4 haptic flex items-center gap-3">
+              <div class="relative">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold">S</div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-baseline">
+                  <div class="text-white font-semibold text-sm">Sarah Chen</div>
+                  <div class="text-gray-400 text-xs">Yesterday</div>
+                </div>
+                <div class="text-gray-300 text-xs mt-1 truncate">The presentation looks great!</div>
+              </div>
+            </div>
+
+            <div class="glass rounded-2xl p-4 haptic flex items-center gap-3">
+              <div class="relative">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-semibold">J</div>
+                <div class="badge">1</div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-baseline">
+                  <div class="text-white font-semibold text-sm">Jake Wilson</div>
+                  <div class="text-gray-400 text-xs">Mon</div>
+                </div>
+                <div class="text-gray-300 text-xs mt-1 truncate">Can you review the latest draft?</div>
+              </div>
+            </div>
+
+            <div class="glass rounded-2xl p-4 haptic flex items-center gap-3">
+              <div class="relative">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-semibold">M</div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-baseline">
+                  <div class="text-white font-semibold text-sm">Maria Garcia</div>
+                  <div class="text-gray-400 text-xs">Sun</div>
+                </div>
+                <div class="text-gray-300 text-xs mt-1 truncate">Sent you a photo</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Message Preview -->
+          <div class="mt-6">
+            <h2 class="text-white font-semibold mb-3">Conversation Preview</h2>
+            <div class="glass rounded-3xl p-4">
+              <div class="message-bubble message-received">
+                Hey! How's your day going?
+              </div>
+              <div class="message-bubble message-sent">
+                Pretty good! Just finished that project we talked about.
+              </div>
+              <div class="message-bubble message-received">
+                That's awesome! Can't wait to see it 😊
+              </div>
+              <div class="message-bubble message-sent">
+                I'll send you the link later today!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart Home Section -->
+        <div class="section" id="section-smart-home">
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-white mb-1">Smart Home</h1>
+            <p class="text-gray-400 text-sm">Control your devices</p>
+          </div>
+
+          <!-- Room Selector -->
+          <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+            <button class="px-4 py-2 rounded-full bg-white text-black text-xs font-semibold whitespace-nowrap haptic">All Rooms</button>
+            <button class="px-4 py-2 rounded-full glass text-white text-xs font-medium whitespace-nowrap haptic">Living Room</button>
+            <button class="px-4 py-2 rounded-full glass text-white text-xs font-medium whitespace-nowrap haptic">Bedroom</button>
+            <button class="px-4 py-2 rounded-full glass text-white text-xs font-medium whitespace-nowrap haptic">Kitchen</button>
+          </div>
+
+          <!-- Device Cards -->
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="device-card glass rounded-2xl p-4" onclick="toggleDevice(this)">
+              <div class="flex justify-between items-start mb-3">
+                <div class="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2L12 7H17L13 10L14.5 15L10 12L5.5 15L7 10L3 7H8L10 2Z" fill="#FCD34D"/>
+                  </svg>
+                </div>
+                <div class="toggle active" onclick="event.stopPropagation(); toggleSwitch(this)">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="text-white font-semibold text-sm">Main Light</div>
+              <div class="text-gray-400 text-xs mt-1">On • 80%</div>
+            </div>
+
+            <div class="device-card glass rounded-2xl p-4" onclick="toggleDevice(this)">
+              <div class="flex justify-between items-start mb-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2C6.68629 2 4 4.68629 4 8V11L2 13V16H18V13L16 11V8C16 4.68629 13.3137 2 10 2Z" fill="#60A5FA"/>
+                  </svg>
+                </div>
+                <div class="toggle" onclick="event.stopPropagation(); toggleSwitch(this)">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="text-white font-semibold text-sm">Thermostat</div>
+              <div class="text-gray-400 text-xs mt-1">72°F • Auto</div>
+            </div>
+
+            <div class="device-card glass rounded-2xl p-4" onclick="toggleDevice(this)">
+              <div class="flex justify-between items-start mb-3">
+                <div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2L12 7H17L13 10L14.5 15L10 12L5.5 15L7 10L3 7H8L10 2Z" fill="#34D399"/>
+                  </svg>
+                </div>
+                <div class="toggle active" onclick="event.stopPropagation(); toggleSwitch(this)">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="text-white font-semibold text-sm">Smart Lock</div>
+              <div class="text-gray-400 text-xs mt-1">Locked</div>
+            </div>
+
+            <div class="device-card glass rounded-2xl p-4" onclick="toggleDevice(this)">
+              <div class="flex justify-between items-start mb-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2L12 7H17L13 10L14.5 15L10 12L5.5 15L7 10L3 7H8L10 2Z" fill="#A78BFA"/>
+                  </svg>
+                </div>
+                <div class="toggle" onclick="event.stopPropagation(); toggleSwitch(this)">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="text-white font-semibold text-sm">Bedroom Light</div>
+              <div class="text-gray-400 text-xs mt-1">Off</div>
+            </div>
+          </div>
+
+          <!-- Scenes -->
+          <div class="mb-4">
+            <h2 class="text-white font-semibold mb-3">Scenes</h2>
+            <div class="grid grid-cols-3 gap-3">
+              <div class="glass rounded-2xl p-3 text-center haptic">
+                <div class="text-2xl mb-2">🌅</div>
+                <div class="text-white text-xs font-medium">Morning</div>
+              </div>
+              <div class="glass rounded-2xl p-3 text-center haptic">
+                <div class="text-2xl mb-2">🌙</div>
+                <div class="text-white text-xs font-medium">Night</div>
+              </div>
+              <div class="glass rounded-2xl p-3 text-center haptic">
+                <div class="text-2xl mb-2">🎬</div>
+                <div class="text-white text-xs font-medium">Movie</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wallet Section -->
+        <div class="section" id="section-wallet">
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-white mb-1">Wallet</h1>
+            <p class="text-gray-400 text-sm">Your finances at a glance</p>
+          </div>
+
+          <!-- Credit Card -->
+          <div class="wallet-card mb-4">
+            <div class="flex justify-between items-start relative z-10">
+              <div class="text-white/80 text-xs font-medium tracking-wider">DEBIT</div>
+              <div class="text-white/60 text-xs">**** 4242</div>
+            </div>
+            <div class="relative z-10">
+              <div class="text-white text-2xl font-bold tracking-wider mb-2">**** **** **** 4242</div>
+              <div class="flex justify-between items-end">
+                <div>
+                  <div class="text-white/60 text-[10px] uppercase">Card Holder</div>
+                  <div class="text-white text-sm font-semibold">John Doe</div>
+                </div>
+                <div>
+                  <div class="text-white/60 text-[10px] uppercase">Expires</div>
+                  <div class="text-white text-sm font-semibold">12/25</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Balance -->
+          <div class="glass rounded-2xl p-5 mb-4">
+            <div class="text-gray-400 text-xs font-medium uppercase tracking-wider">Current Balance</div>
+            <div class="text-3xl font-bold text-white mt-2">$1,240.50</div>
+            <div class="flex items-center gap-2 mt-2">
+              <div class="w-2 h-2 rounded-full bg-green-500"></div>
+              <div class="text-green-400 text-xs">+2.5% from last month</div>
+            </div>
+          </div>
+
+          <!-- Recent Transactions -->
+          <div class="mb-4">
+            <h2 class="text-white font-semibold mb-3">Recent Activity</h2>
+            <div class="space-y-3">
+              <div class="glass rounded-2xl p-4 haptic flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M4 10H16M16 10L12 6M16 10L12 14" stroke="#EF4444" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="text-white font-semibold text-sm">Tech Store</div>
+                    <div class="text-gray-400 text-xs">Electronics • Jun 3</div>
+                  </div>
+                </div>
+                <div class="text-red-400 font-semibold text-sm">-$299.00</div>
+              </div>
+
+              <div class="glass rounded-2xl p-4 haptic flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M4 10H16M16 10L12 6M16 10L12 14" stroke="#22C55E" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="text-white font-semibold text-sm">Direct Deposit</div>
+                    <div class="text-gray-400 text-xs">Payroll • Jun 1</div>
+                  </div>
+                </div>
+                <div class="text-green-400 font-semibold text-sm">+$1,500.00</div>
+              </div>
+
+              <div class="glass rounded-2xl p-4 haptic flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M4 10H16M16 10L12 6M16 10L12 14" stroke="#F97316" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="text-white font-semibold text-sm">Grocery Market</div>
+                    <div class="text-gray-400 text-xs">Food • Jun 2</div>
+                  </div>
+                </div>
+                <div class="text-red-400 font-semibold text-sm">-$84.20</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="section" id="section-settings">
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-white mb-1">Settings</h1>
+            <p class="text-gray-400 text-sm">Customize your experience</p>
+          </div>
+
+          <!-- Profile Card -->
+          <div class="glass rounded-3xl p-5 mb-4 flex items-center gap-4">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold">JD</div>
+            <div class="flex-1">
+              <div class="text-white font-semibold">John Doe</div>
+              <div class="text-gray-400 text-sm">john.doe@example.com</div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M6 8L10 12L14 8" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <!-- Settings Groups -->
+          <div class="glass rounded-2xl overflow-hidden mb-4">
+            <div class="settings-row">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 2C4.68629 2 2 4.68629 2 8V11L0 13V16H16V13L14 11V8C14 4.68629 11.3137 2 8 2Z" fill="white"/>
+                  </svg>
+                </div>
+                <div class="text-white text-sm">Notifications</div>
+              </div>
+              <div class="toggle active" onclick="toggleSwitch(this)">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 2L10 7H15L11 10L12.5 15L8 12L3.5 15L5 10L1 7H6L8 2Z" fill="white"/>
+                  </svg>
+                </div>
+                <div class="text-white text-sm">Focus Mode</div>
+              </div>
+              <div class="toggle" onclick="toggleSwitch(this)">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="6" stroke="white" stroke-width="2"/>
+                    <path d="M8 5V8L10 10" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="text-white text-sm">Dark Mode</div>
+              </div>
+              <div class="toggle active" onclick="toggleSwitch(this)">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass rounded-2xl overflow-hidden mb-4">
+            <div class="settings-row">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 4H12V12H4V4Z" stroke="white" stroke-width="2"/>
+                    <path d="M8 8H12V12H8V8Z" fill="white"/>
+                  </svg>
+                </div>
+                <div class="text-white text-sm">Privacy</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M6 4L10 8L6 12" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <div class="settings-row">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 2L10 7H15L11 10L12.5 15L8 12L3.5 15L5 10L1 7H6L8 2Z" fill="white"/>
+                  </svg>
+                </div>
+                <div class="text-white text-sm">Security</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M6 4L10 8L6 12" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <div class="settings-row">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gray-500 flex items-center justify-center">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 2L10 7H15L11 10L12.5 15L8 12L3.5 15L5 10L1 7H6L8 2Z" fill="white"/>
+                  </svg>
+                </div>
+                <div class="text-white text-sm">About</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M6 4L10 8L6 12" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- App Version -->
+          <div class="text-center mt-8">
+            <div class="text-gray-500 text-xs">Horizon OS v2.1.0</div>
+            <div class="text-gray-600 text-[10px] mt-1">Horizon X1 Pro</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar glass-dark">
+        <div class="flex justify-around">
+          <div class="tab-item active haptic" onclick="switchTab('today')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="text-xs">Today</span>
+          </div>
+          
+          <div class="tab-item haptic" onclick="switchTab('calendar')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="text-xs">Calendar</span>
+          </div>
+          
+          <div class="tab-item haptic" onclick="switchTab('messages')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M21 11.5C21 16.75 16.75 21 11.5 21C8.81371 21 6.29755 19.9348 4.44975 18.087C2.60195 16.2392 1.53679 13.723 1.53679 11.0368C1.53679 8.35054 2.60195 5.83438 4.44975 3.98658C6.29755 2.13878 8.81371 1.07362 11.5 1.07362C16.75 1.07362 21 5.32362 21 10.5736V11.5Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M8 11H16M11 8V14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="text-xs">Messages</span>
+          </div>
+          
+          <div class="tab-item haptic" onclick="switchTab('smart-home')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="text-xs">Home</span>
+          </div>
+          
+          <div class="tab-item haptic" onclick="switchTab('wallet')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="5" width="20" height="14" rx="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M2 10H22" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="text-xs">Wallet</span>
+          </div>
+          
+          <div class="tab-item haptic" onclick="switchTab('settings')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 1V4M12 20V23M4.22 4.22L6.34 6.34M17.66 17.66L19.78 19.78M1 12H4M20 12H23M4.22 19.78L6.34 17.66M17.66 6.34L19.78 4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="text-xs">Settings</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Indicator -->
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <script>
+    // Update status bar time
+    function updateTime() {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById('status-time').textContent = `${hours}:${minutes}`;
+    }
+    
+    // Update greeting date
+    function updateGreetingDate() {
+      const now = new Date();
+      const options = { weekday: 'long', month: 'long', day: 'numeric' };
+      document.getElementById('greeting-date').textContent = now.toLocaleDateString('en-US', options);
+    }
+
+    // Generate calendar grid
+    function generateCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      const daysInMonth = 31;
+      const startDay = 1; // Monday
+      
+      for (let i = 0; i < startDay; i++) {
+        const emptyDay = document.createElement('div');
+        grid.appendChild(emptyDay);
+      }
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day text-gray-300';
+        dayEl.textContent = day;
+        
+        if (day === new Date().getDate()) {
+          dayEl.classList.add('today');
+        }
+        
+        dayEl.addEventListener('click', () => {
+          document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+          dayEl.classList.add('selected');
+        });
+        
+        grid.appendChild(dayEl);
+      }
+    }
+
+    // Tab switching
+    function switchTab(tabName) {
+      // Update tab bar
+      document.querySelectorAll('.tab-item').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.currentTarget.classList.add('active');
+      
+      // Update sections
+      document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+      });
+      document.getElementById(`section-${tabName}`).classList.add('active');
+      
+      // Scroll to top
+      document.getElementById('contentArea').scrollTop = 0;
+    }
+
+    // Dynamic Island toggle
+    document.getElementById('dynamicIsland').addEventListener('click', () => {
+      document.getElementById('dynamicIsland').classList.toggle('expanded');
+    });
+
+    // Toggle switch
+    function toggleSwitch(element) {
+      element.classList.toggle('active');
+    }
+
+    // Toggle device
+    function toggleDevice(element) {
+      const toggle = element.querySelector('.toggle');
+      if (toggle) {
+        toggle.classList.toggle('active');
+      }
+    }
+
+    // Quick action toggle
+    function toggleQuickAction(element) {
+      element.style.background = element.style.background === 'rgba(255, 255, 255, 0.15)' ? '' : 'rgba(255, 255, 255, 0.15)';
+    }
+
+    // Initialize
+    updateTime();
+    updateGreetingDate();
+    generateCalendar();
+    
+    // Update time every minute
+    setInterval(updateTime, 60000);
+  </script>
+</body>
+</html>
