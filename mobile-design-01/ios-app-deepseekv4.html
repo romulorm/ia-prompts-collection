@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Cortex — Lifestyle OS</title>
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; min-height: 100vh;
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a2e;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== PHONE FRAME ===== */
+  .phone {
+    width: 393px; height: 852px;
+    background: #000;
+    border-radius: 54px;
+    padding: 18px;
+    box-shadow:
+      0 0 0 2px #333,
+      0 0 0 4px #1a1a1a,
+      0 20px 80px rgba(0,0,0,0.7),
+      0 0 40px rgba(0,0,0,0.4);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    border-radius: 36px;
+    overflow: hidden;
+    background: #0a0a12;
+    position: relative;
+  }
+
+  /* ===== DYNAMIC ISLAND ===== */
+  .dynamic-island {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 124px; height: 36px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  .dynamic-island .camera-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #1a2a6c, #000);
+  }
+  .dynamic-island .sensor-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #0a0a1a;
+    opacity: 0.6;
+  }
+
+  /* ===== STATUS BAR ===== */
+  .status-bar {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 54px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 32px 6px;
+    z-index: 99;
+    color: #fff;
+    font-size: 15px; font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .status-bar .time { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
+  .status-bar .icons { display: flex; gap: 7px; align-items: center; font-size: 14px; }
+  .status-bar .icons svg { width: 17px; height: 17px; fill: currentColor; }
+
+  /* ===== HOME INDICATOR ===== */
+  .home-indicator {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 134px; height: 5px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 3px;
+    z-index: 100;
+  }
+
+  /* ===== APP CONTAINER ===== */
+  .app-container {
+    width: 100%; height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ===== SCROLLABLE CONTENT ===== */
+  .app-content {
+    width: 100%; height: 100%;
+    padding: 54px 0 82px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    position: relative;
+  }
+  .app-content::-webkit-scrollbar { display: none; }
+
+  /* ===== BOTTOM TAB BAR ===== */
+  .tab-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 82px;
+    background: rgba(10,10,20,0.85);
+    backdrop-filter: blur(30px) saturate(1.4);
+    -webkit-backdrop-filter: blur(30px) saturate(1.4);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: flex-start; justify-content: space-around;
+    padding: 8px 8px 24px;
+    z-index: 50;
+  }
+  .tab-item {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    color: rgba(255,255,255,0.35);
+    font-size: 10px; font-weight: 500; letter-spacing: 0.2px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    padding: 4px 12px;
+    border-radius: 12px;
+    position: relative;
+  }
+  .tab-item svg { width: 25px; height: 25px; fill: currentColor; transition: fill 0.15s ease; }
+  .tab-item.active { color: #5e9eff; }
+  .tab-item.active::before {
+    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 20px; height: 2.5px; border-radius: 2px;
+    background: #5e9eff;
+  }
+  .tab-item:not(.active):active { transform: scale(0.92); transition: transform 0.08s; }
+
+  /* ===== PAGE ===== */
+  .page {
+    display: none;
+    padding: 0 20px 16px;
+    animation: pageIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .page.active { display: block; }
+
+  @keyframes pageIn {
+    0% { opacity: 0.5; transform: translateY(8px) scale(0.99); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ===== MODEL BADGE ===== */
+  .model-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, rgba(94,158,255,0.2), rgba(120,80,255,0.2));
+    border: 1px solid rgba(94,158,255,0.25);
+    border-radius: 20px;
+    padding: 4px 14px 4px 12px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    color: #8ab4ff;
+    margin-bottom: 14px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .model-badge .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #5e9eff;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  /* ===== SECTION HEADERS ===== */
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px; margin-top: 18px;
+  }
+  .section-header:first-of-type { margin-top: 4px; }
+  .section-header h2 {
+    font-size: 20px; font-weight: 700; color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .section-header .see-all {
+    font-size: 14px; font-weight: 500; color: #5e9eff;
+    cursor: pointer; opacity: 0.8;
+    transition: opacity 0.15s;
+  }
+  .section-header .see-all:active { opacity: 0.5; }
+
+  /* ===== GREETING ===== */
+  .greeting {
+    font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.5);
+    margin-bottom: 2px;
+  }
+  .greeting strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card:active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+
+  /* ===== NOTIFICATION CARD ===== */
+  .notif-card {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .notif-card:active { transform: scale(0.97); }
+  .notif-card .icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+  }
+  .notif-card .body { flex: 1; min-width: 0; }
+  .notif-card .app-name { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); }
+  .notif-card .time { font-size: 11px; color: rgba(255,255,255,0.3); float: right; }
+  .notif-card .preview { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 2px; line-height: 1.35; }
+
+  /* ===== WIDGET GRID ===== */
+  .widget-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .widget {
+    border-radius: 16px; padding: 16px;
+    min-height: 110px;
+    display: flex; flex-direction: column;
+    border: 1px solid rgba(255,255,255,0.05);
+    position: relative; overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .widget:active { transform: scale(0.96); }
+  .widget .w-icon { font-size: 22px; margin-bottom: 8px; }
+  .widget .w-label { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.5); }
+  .widget .w-value { font-size: 22px; font-weight: 700; color: #fff; margin-top: auto; }
+  .widget .w-sub { font-size: 11px; color: rgba(255,255,255,0.35); }
+
+  .widget-weather { background: linear-gradient(145deg, #1a2a6c, #2d4a8a); }
+  .widget-activity { background: linear-gradient(145deg, #2d1b69, #5b2c8a); }
+  .widget-stocks { background: linear-gradient(145deg, #1a3a2a, #2d6a4a); }
+  .widget-battery { background: linear-gradient(145deg, #3a2a1a, #6a4a1a); }
+
+  /* ===== QUICK ACTIONS ===== */
+  .quick-actions {
+    display: flex; gap: 10px; overflow-x: auto;
+    padding-bottom: 4px; margin-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .quick-actions::-webkit-scrollbar { display: none; }
+  .quick-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    min-width: 64px; padding: 12px 0;
+    background: rgba(255,255,255,0.06);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.04);
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .quick-btn:active { transform: scale(0.92); background: rgba(255,255,255,0.1); }
+  .quick-btn .qb-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .quick-btn .qb-label { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); white-space: nowrap; }
+
+  /* ===== CALENDAR EVENTS ===== */
+  .event-row {
+    display: flex; gap: 12px; align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .event-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .event-row:first-child { padding-top: 0; }
+  .event-time { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.5); min-width: 44px; }
+  .event-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .event-info { flex: 1; }
+  .event-info .e-title { font-size: 14px; font-weight: 600; color: #fff; }
+  .event-info .e-detail { font-size: 12px; color: rgba(255,255,255,0.4); }
+
+  /* ===== MESSAGE PREVIEWS ===== */
+  .msg-row {
+    display: flex; gap: 12px; align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  .msg-row:active { transform: scale(0.98); }
+  .msg-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .msg-row:first-child { padding-top: 0; }
+  .msg-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 600; color: #fff;
+    flex-shrink: 0;
+  }
+  .msg-body { flex: 1; min-width: 0; }
+  .msg-body .m-name { font-size: 14px; font-weight: 600; color: #fff; }
+  .msg-body .m-text { font-size: 13px; color: rgba(255,255,255,0.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .msg-meta { text-align: right; flex-shrink: 0; }
+  .msg-meta .m-time { font-size: 11px; color: rgba(255,255,255,0.3); }
+  .msg-meta .m-badge {
+    display: inline-block; margin-top: 4px;
+    background: #ff3b30; color: #fff;
+    font-size: 11px; font-weight: 600;
+    min-width: 18px; height: 18px; line-height: 18px;
+    border-radius: 9px; text-align: center;
+    padding: 0 5px;
+  }
+
+  /* ===== SMART HOME ===== */
+  .home-device {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .home-device:last-child { border-bottom: none; padding-bottom: 0; }
+  .home-device .hd-left { display: flex; align-items: center; gap: 12px; }
+  .home-device .hd-icon { font-size: 22px; }
+  .home-device .hd-name { font-size: 14px; font-weight: 500; color: #fff; }
+  .home-device .hd-state { font-size: 12px; color: rgba(255,255,255,0.4); }
+
+  /* ===== TOGGLE SWITCH ===== */
+  .toggle {
+    width: 50px; height: 30px;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.15);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.25s ease;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toggle.on { background: #34c759; }
+  .toggle .knob {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute; top: 2px; left: 2px;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .toggle.on .knob { transform: translateX(20px); }
+
+  /* ===== WALLET ===== */
+  .wallet-card-main {
+    background: linear-gradient(145deg, #1a1a3e, #2a1a5e);
+    border-radius: 20px;
+    padding: 24px 20px;
+    border: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .wallet-card-main:active { transform: scale(0.97); }
+  .wallet-card-main .card-chip {
+    width: 36px; height: 26px;
+    background: linear-gradient(135deg, #d4a847, #f0d080);
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  .wallet-card-main .card-number {
+    font-size: 20px; font-weight: 600; letter-spacing: 2px;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 16px;
+    font-family: 'Courier New', monospace;
+  }
+  .wallet-card-main .card-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .wallet-card-main .card-holder {
+    font-size: 12px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px;
+  }
+  .wallet-card-main .card-holder strong {
+    display: block; font-size: 14px; color: #fff; font-weight: 600;
+    margin-top: 2px; letter-spacing: 0;
+  }
+  .wallet-card-main .card-brand {
+    font-size: 22px; font-weight: 800; color: rgba(255,255,255,0.2);
+    letter-spacing: 1px;
+  }
+
+  .transaction-row {
+    display: flex; gap: 12px; align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .transaction-row:last-child { border-bottom: none; }
+  .tx-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .tx-info { flex: 1; }
+  .tx-info .tx-name { font-size: 14px; font-weight: 500; color: #fff; }
+  .tx-info .tx-cat { font-size: 12px; color: rgba(255,255,255,0.35); }
+  .tx-amount { font-size: 15px; font-weight: 600; }
+  .tx-amount.neg { color: #ff453a; }
+  .tx-amount.pos { color: #30d158; }
+
+  /* ===== SETTINGS ===== */
+  .settings-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  .settings-row:active { transform: scale(0.98); }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row .s-icon {
+    width: 30px; text-align: center;
+    font-size: 18px;
+  }
+  .settings-row .s-label { flex: 1; font-size: 14px; font-weight: 500; color: #fff; }
+  .settings-row .s-arrow { color: rgba(255,255,255,0.2); font-size: 16px; }
+  .settings-row .s-value { font-size: 14px; color: rgba(255,255,255,0.35); }
+
+  /* ===== BALANCE DISPLAY ===== */
+  .balance-display { text-align: center; padding: 8px 0 16px; }
+  .balance-display .b-label { font-size: 13px; color: rgba(255,255,255,0.4); }
+  .balance-display .b-amount { font-size: 36px; font-weight: 700; color: #fff; letter-spacing: -1px; }
+  .balance-display .b-change { font-size: 14px; font-weight: 500; }
+  .balance-display .b-change.up { color: #30d158; }
+  .balance-display .b-change.down { color: #ff453a; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 440px) {
+    body { padding: 0; }
+    .phone {
+      width: 100%; height: 100vh;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+    .phone-screen { border-radius: 0; }
+  }
+
+  /* ===== UTILITY ===== */
+  .mt-4 { margin-top: 4px; }
+  .mt-8 { margin-top: 8px; }
+  .mb-4 { margin-bottom: 4px; }
+  .flex { display: flex; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+
+  /* subtle background gradient on the screen */
+  .screen-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(30,40,80,0.3), transparent 70%),
+                radial-gradient(ellipse at 80% 100%, rgba(40,20,70,0.15), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .app-content > * { position: relative; z-index: 1; }
+
+  /* Haptic press feedback for all interactive */
+  .haptic { transition: transform 0.1s ease, opacity 0.1s ease; cursor: pointer; }
+  .haptic:active { transform: scale(0.96); opacity: 0.8; }
+
+  /* Ambient glow */
+  .ambient-glow {
+    position: absolute;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(94,158,255,0.06), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="phone-screen">
+    <!-- Dynamic Island -->
+    <div class="dynamic-island">
+      <div class="sensor-dot"></div>
+      <div class="camera-dot"></div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span class="time" id="statusTime">9:41</span>
+      <div class="icons">
+        <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+      </div>
+    </div>
+
+    <!-- Ambient glow -->
+    <div class="ambient-glow" style="top: -40px; right: -60px;"></div>
+    <div class="ambient-glow" style="bottom: -60px; left: -40px; background: radial-gradient(circle, rgba(120,80,255,0.06), transparent 70%);"></div>
+
+    <!-- Screen BG -->
+    <div class="screen-bg"></div>
+
+    <!-- App Content -->
+    <div class="app-content" id="appContent">
+
+      <!-- ===== PAGE: TODAY (HOME) ===== -->
+      <div class="page active" id="page-today">
+        <div class="flex-between" style="margin-bottom: 6px;">
+          <div>
+            <div class="greeting">Good <span id="greetingTime">morning</span>,</div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.3px;">Welcome back</div>
+          </div>
+          <div class="model-badge">
+            <span class="dot"></span>
+            DeepSeek V4 Flash
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <div class="quick-btn" onclick="navigateTo('calendar')">
+            <div class="qb-icon" style="background: rgba(94,158,255,0.2); color: #5e9eff;">📅</div>
+            <span class="qb-label">Calendar</span>
+          </div>
+          <div class="quick-btn">
+            <div class="qb-icon" style="background: rgba(52,199,89,0.2); color: #34c759;">🔍</div>
+            <span class="qb-label">Focus</span>
+          </div>
+          <div class="quick-btn">
+            <div class="qb-icon" style="background: rgba(255,149,0,0.2); color: #ff9500;">⏰</div>
+            <span class="qb-label">Alarm</span>
+          </div>
+          <div class="quick-btn">
+            <div class="qb-icon" style="background: rgba(175,82,222,0.2); color: #af52de;">🎵</div>
+            <span class="qb-label">Music</span>
+          </div>
+          <div class="quick-btn">
+            <div class="qb-icon" style="background: rgba(255,69,58,0.2); color: #ff453a;">📍</div>
+            <span class="qb-label">Maps</span>
+          </div>
+        </div>
+
+        <!-- Widgets -->
+        <div class="widget-grid">
+          <div class="widget widget-weather">
+            <div class="w-icon">🌤</div>
+            <div class="w-label">Cupertino</div>
+            <div class="w-value">72°</div>
+            <div class="w-sub">Sunny • H: 78° L: 62°</div>
+          </div>
+          <div class="widget widget-activity">
+            <div class="w-icon">❤️</div>
+            <div class="w-label">Activity</div>
+            <div class="w-value">6,842</div>
+            <div class="w-sub">Steps • 4.2 mi</div>
+          </div>
+          <div class="widget widget-stocks">
+            <div class="w-icon">📈</div>
+            <div class="w-label">Portfolio</div>
+            <div class="w-value">+2.4%</div>
+            <div class="w-sub">S&P 500 • 5,421</div>
+          </div>
+          <div class="widget widget-battery">
+            <div class="w-icon">🔋</div>
+            <div class="w-label">Devices</div>
+            <div class="w-value">87%</div>
+            <div class="w-sub">iPhone • 3h remaining</div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="section-header">
+          <h2>Recent Activity</h2>
+          <span class="see-all">See All</span>
+        </div>
+
+        <div class="notif-card">
+          <div class="icon" style="background: rgba(94,158,255,0.2);">📬</div>
+          <div class="body">
+            <div class="app-name">Mail <span class="time">5m ago</span></div>
+            <div class="preview">Your monthly statement is ready — Mar 2026 balance available now.</div>
+          </div>
+        </div>
+
+        <div class="notif-card">
+          <div class="icon" style="background: rgba(255,149,0,0.2);">🔔</div>
+          <div class="body">
+            <div class="app-name">Reminders <span class="time">18m ago</span></div>
+            <div class="preview">Team standup @ 10:00 AM • Don't forget the quarterly report.</div>
+          </div>
+        </div>
+
+        <div class="notif-card">
+          <div class="icon" style="background: rgba(52,199,89,0.2);">🌱</div>
+          <div class="body">
+            <div class="app-name">Health <span class="time">1h ago</span></div>
+            <div class="preview">You've hit 7,500 steps! 2,500 more to reach your daily goal.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE: CALENDAR ===== -->
+      <div class="page" id="page-calendar">
+        <div class="flex-between" style="margin-bottom: 12px;">
+          <h2 style="font-size: 22px; font-weight: 700; color: #fff;">Calendar</h2>
+          <span class="model-badge"><span class="dot"></span> DeepSeek V4 Flash</span>
+        </div>
+
+        <div class="card">
+          <div class="flex-between mb-4">
+            <span style="font-size: 16px; font-weight: 600; color: #fff;">June 2026</span>
+            <span style="font-size: 13px; color: rgba(255,255,255,0.3);">Week 23</span>
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: space-around; margin-bottom: 16px;">
+            <div style="text-align: center; padding: 8px 0; width: 40px; border-radius: 10px; background: rgba(255,255,255,0.04);">
+              <div style="font-size: 11px; color: rgba(255,255,255,0.4);">M</div>
+              <div style="font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.3);">1</div>
+            </div>
+            <div style="text-align: center; padding: 8px 0; width: 40px; border-radius: 10px; background: rgba(255,255,255,0.04);">
+              <div style="font-size: 11px; color: rgba(255,255,255,0.4);">T</div>
+              <div style="font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.3);">2</div>
+            </div>
+            <div style="text-align: center; padding: 8px 0; width: 40px; border-radius: 10px; background: rgba(255,255,255,0.04);">
+              <div style="font-size: 11px; color: rgba(255,255,255,0.4);">W</div>
+              <div style="font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.3);">3</div>
+            </div>
+            <div style="text-align: center; padding: 8px 0; width: 40px; border-radius: 10px; background: rgba(94,158,255,0.25);">
+              <div style="font-size: 11px; color: #5e9eff;">T</div>
+              <div style="font-size: 16px; font-weight: 700; color: #5e9eff;">4</div>
+            </div>
+            <div style="text-align: center; padding: 8px 0; width: 40px; border-radius: 10px; background: rgba(255,255,255,0.04);">
+              <div style="font-size: 11px; color: rgba(255,255,255,0.4);">F</div>
+              <div style="font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.3);">5</div>
+            </div>
+            <div style="text-align: center; padding: 8px 0; width: 40px; border-radius: 10px; background: rgba(255,255,255,0.04);">
+              <div style="font-size: 11px; color: rgba(255,255,255,0.4);">S</div>
+              <div style="font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.3);">6</div>
+            </div>
+            <div style="text-align: center; padding: 8px 0; width: 40px; border-radius: 10px; background: rgba(255,255,255,0.04);">
+              <div style="font-size: 11px; color: rgba(255,255,255,0.4);">S</div>
+              <div style="font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.3);">7</div>
+            </div>
+          </div>
+
+          <div style="font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 8px;">Today</div>
+
+          <div class="event-row">
+            <span class="event-time">09:00</span>
+            <span class="event-dot" style="background: #5e9eff;"></span>
+            <div class="event-info">
+              <div class="e-title">Design Review</div>
+              <div class="e-detail">Conference Room A • 30 min</div>
+            </div>
+          </div>
+          <div class="event-row">
+            <span class="event-time">10:30</span>
+            <span class="event-dot" style="background: #34c759;"></span>
+            <div class="event-info">
+              <div class="e-title">Team Standup</div>
+              <div class="e-detail">Zoom • 15 min</div>
+            </div>
+          </div>
+          <div class="event-row">
+            <span class="event-time">12:00</span>
+            <span class="event-dot" style="background: #ff9f0a;"></span>
+            <div class="event-info">
+              <div class="e-title">Lunch with Sarah</div>
+              <div class="e-detail">Blue Bottle Cafe</div>
+            </div>
+          </div>
+          <div class="event-row">
+            <span class="event-time">15:00</span>
+            <span class="event-dot" style="background: #af52de;"></span>
+            <div class="event-info">
+              <div class="e-title">Product Roadmap</div>
+              <div class="e-detail">Boardroom • 1 hr</div>
+            </div>
+          </div>
+          <div class="event-row">
+            <span class="event-time">17:30</span>
+            <span class="event-dot" style="background: #ff453a;"></span>
+            <div class="event-info">
+              <div class="e-title">Gym Session</div>
+              <div class="e-detail">Equinox • Cardio</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE: MESSAGES ===== -->
+      <div class="page" id="page-messages">
+        <div class="flex-between" style="margin-bottom: 12px;">
+          <h2 style="font-size: 22px; font-weight: 700; color: #fff;">Messages</h2>
+          <span class="model-badge"><span class="dot"></span> DeepSeek V4 Flash</span>
+        </div>
+
+        <div class="card" style="padding: 4px 16px;">
+          <div class="msg-row">
+            <div class="msg-avatar" style="background: linear-gradient(135deg, #5e9eff, #7b68ee);">JD</div>
+            <div class="msg-body">
+              <div class="m-name">Jessica Davis</div>
+              <div class="m-text">Hey! Just sent you the design files for review. Lmk what you think!</div>
+            </div>
+            <div class="msg-meta">
+              <div class="m-time">2m</div>
+              <div class="m-badge">2</div>
+            </div>
+          </div>
+          <div class="msg-row">
+            <div class="msg-avatar" style="background: linear-gradient(135deg, #34c759, #30b350);">MT</div>
+            <div class="msg-body">
+              <div class="m-name">Marcus Thompson</div>
+              <div class="m-text">Confirmed for tomorrow. I'll bring the prototype.</div>
+            </div>
+            <div class="msg-meta">
+              <div class="m-time">18m</div>
+            </div>
+          </div>
+          <div class="msg-row">
+            <div class="msg-avatar" style="background: linear-gradient(135deg, #ff9f0a, #e8890a);">EK</div>
+            <div class="msg-body">
+              <div class="m-name">Emily Kim</div>
+              <div class="m-text">Great meeting today! Here are the action items I captured...</div>
+            </div>
+            <div class="msg-meta">
+              <div class="m-time">1h</div>
+              <div class="m-badge">1</div>
+            </div>
+          </div>
+          <div class="msg-row">
+            <div class="msg-avatar" style="background: linear-gradient(135deg, #af52de, #8e3ab5);">AL</div>
+            <div class="msg-body">
+              <div class="m-name">Alex Liu</div>
+              <div class="m-text">Dinner this weekend? There's a new spot in Mission.</div>
+            </div>
+            <div class="msg-meta">
+              <div class="m-time">2h</div>
+            </div>
+          </div>
+          <div class="msg-row">
+            <div class="msg-avatar" style="background: linear-gradient(135deg, #ff453a, #d63031);">SR</div>
+            <div class="msg-body">
+              <div class="m-name">Sarah Reynolds</div>
+              <div class="m-text">Thanks for the help today! Really appreciate it 🙏</div>
+            </div>
+            <div class="msg-meta">
+              <div class="m-time">3h</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE: SMART HOME ===== -->
+      <div class="page" id="page-home">
+        <div class="flex-between" style="margin-bottom: 12px;">
+          <h2 style="font-size: 22px; font-weight: 700; color: #fff;">Smart Home</h2>
+          <span class="model-badge"><span class="dot"></span> DeepSeek V4 Flash</span>
+        </div>
+
+        <div class="card">
+          <div class="section-header" style="margin-top: 0;">
+            <span style="font-size: 15px; font-weight: 600; color: #fff;">Living Room</span>
+            <span style="font-size: 12px; color: rgba(255,255,255,0.3);">3 devices</span>
+          </div>
+          <div class="home-device">
+            <div class="hd-left">
+              <span class="hd-icon">💡</span>
+              <div>
+                <div class="hd-name">Ceiling Light</div>
+                <div class="hd-state">Brightness 80%</div>
+              </div>
+            </div>
+            <div class="toggle on" onclick="toggleSwitch(this)">
+              <div class="knob"></div>
+            </div>
+          </div>
+          <div class="home-device">
+            <div class="hd-left">
+              <span class="hd-icon">❄️</span>
+              <div>
+                <div class="hd-name">Thermostat</div>
+                <div class="hd-state">72° F — Cooling</div>
+              </div>
+            </div>
+            <div class="toggle on" onclick="toggleSwitch(this)">
+              <div class="knob"></div>
+            </div>
+          </div>
+          <div class="home-device">
+            <div class="hd-left">
+              <span class="hd-icon">🔊</span>
+              <div>
+                <div class="hd-name">Speaker</div>
+                <div class="hd-state">Playing — Lo-fi Beats</div>
+              </div>
+            </div>
+            <div class="toggle" onclick="toggleSwitch(this)">
+              <div class="knob"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-header" style="margin-top: 0;">
+            <span style="font-size: 15px; font-weight: 600; color: #fff;">Bedroom</span>
+            <span style="font-size: 12px; color: rgba(255,255,255,0.3);">2 devices</span>
+          </div>
+          <div class="home-device">
+            <div class="hd-left">
+              <span class="hd-icon">💡</span>
+              <div>
+                <div class="hd-name">Lamp</div>
+                <div class="hd-state">Warm mode</div>
+              </div>
+            </div>
+            <div class="toggle" onclick="toggleSwitch(this)">
+              <div class="knob"></div>
+            </div>
+          </div>
+          <div class="home-device">
+            <div class="hd-left">
+              <span class="hd-icon">🪟</span>
+              <div>
+                <div class="hd-name">Smart Blinds</div>
+                <div class="hd-state">Open — 45%</div>
+              </div>
+            </div>
+            <div class="toggle on" onclick="toggleSwitch(this)">
+              <div class="knob"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE: WALLET ===== -->
+      <div class="page" id="page-wallet">
+        <div class="flex-between" style="margin-bottom: 12px;">
+          <h2 style="font-size: 22px; font-weight: 700; color: #fff;">Wallet</h2>
+          <span class="model-badge"><span class="dot"></span> DeepSeek V4 Flash</span>
+        </div>
+
+        <div class="wallet-card-main">
+          <div class="card-chip"></div>
+          <div class="card-number">•••• •••• •••• 4829</div>
+          <div class="card-bottom">
+            <div class="card-holder">
+              Card Holder
+              <strong>Alex Morgan</strong>
+            </div>
+            <div class="card-brand">CORTEX</div>
+          </div>
+        </div>
+
+        <div class="flex-between" style="margin-bottom: 8px;">
+          <span style="font-size: 15px; font-weight: 600; color: #fff;">Recent Transactions</span>
+          <span class="see-all">See All</span>
+        </div>
+
+        <div class="card" style="padding: 4px 16px;">
+          <div class="transaction-row">
+            <div class="tx-icon" style="background: rgba(255,69,58,0.15);">☕</div>
+            <div class="tx-info">
+              <div class="tx-name">Blue Bottle Coffee</div>
+              <div class="tx-cat">Food & Drink</div>
+            </div>
+            <span class="tx-amount neg">-$5.80</span>
+          </div>
+          <div class="transaction-row">
+            <div class="tx-icon" style="background: rgba(52,199,89,0.15);">🛒</div>
+            <div class="tx-info">
+              <div class="tx-name">Whole Foods Market</div>
+              <div class="tx-cat">Groceries</div>
+            </div>
+            <span class="tx-amount neg">-$62.40</span>
+          </div>
+          <div class="transaction-row">
+            <div class="tx-icon" style="background: rgba(94,158,255,0.15);">💼</div>
+            <div class="tx-info">
+              <div class="tx-name">Freelance Payment</div>
+              <div class="tx-cat">Income</div>
+            </div>
+            <span class="tx-amount pos">+$1,200.00</span>
+          </div>
+          <div class="transaction-row">
+            <div class="tx-icon" style="background: rgba(255,149,0,0.15);">🚕</div>
+            <div class="tx-info">
+              <div class="tx-name">Uber Ride</div>
+              <div class="tx-cat">Transport</div>
+            </div>
+            <span class="tx-amount neg">-$24.50</span>
+          </div>
+          <div class="transaction-row">
+            <div class="tx-icon" style="background: rgba(175,82,222,0.15);">🎬</div>
+            <div class="tx-info">
+              <div class="tx-name">AMC Theatres</div>
+              <div class="tx-cat">Entertainment</div>
+            </div>
+            <span class="tx-amount neg">-$18.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE: SETTINGS ===== -->
+      <div class="page" id="page-settings">
+        <div class="flex-between" style="margin-bottom: 12px;">
+          <h2 style="font-size: 22px; font-weight: 700; color: #fff;">Settings</h2>
+          <span class="model-badge"><span class="dot"></span> DeepSeek V4 Flash</span>
+        </div>
+
+        <div class="card" style="padding: 4px 16px;">
+          <div class="settings-row">
+            <span class="s-icon">✈️</span>
+            <span class="s-label">Airplane Mode</span>
+            <div class="toggle" onclick="toggleSwitch(this)">
+              <div class="knob"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="s-icon">📶</span>
+            <span class="s-label">Wi-Fi</span>
+            <span class="s-value">Cortex_5G</span>
+            <span class="s-arrow">›</span>
+          </div>
+          <div class="settings-row">
+            <span class="s-icon">🔷</span>
+            <span class="s-label">Bluetooth</span>
+            <span class="s-value">Connected</span>
+            <span class="s-arrow">›</span>
+          </div>
+          <div class="settings-row">
+            <span class="s-icon">📱</span>
+            <span class="s-label">Cellular</span>
+            <span class="s-value">5G • Verizon</span>
+            <span class="s-arrow">›</span>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 4px 16px;">
+          <div class="settings-row">
+            <span class="s-icon">🔔</span>
+            <span class="s-label">Notifications</span>
+            <span class="s-arrow">›</span>
+          </div>
+          <div class="settings-row">
+            <span class="s-icon">🎵</span>
+            <span class="s-label">Sound & Haptics</span>
+            <span class="s-arrow">›</span>
+          </div>
+          <div class="settings-row">
+            <span class="s-icon">🖥</span>
+            <span class="s-label">Display & Brightness</span>
+            <span class="s-value">Dark</span>
+            <span class="s-arrow">›</span>
+          </div>
+          <div class="settings-row">
+            <span class="s-icon">🔒</span>
+            <span class="s-label">Privacy & Security</span>
+            <span class="s-arrow">›</span>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 4px 16px;">
+          <div class="settings-row">
+            <span class="s-icon">🔋</span>
+            <span class="s-label">Battery</span>
+            <span class="s-value">87%</span>
+            <span class="s-arrow">›</span>
+          </div>
+          <div class="settings-row">
+            <span class="s-icon">☁️</span>
+            <span class="s-label">iCloud</span>
+            <span class="s-value">20 GB used</span>
+            <span class="s-arrow">›</span>
+          </div>
+          <div class="settings-row">
+            <span class="s-icon">ℹ️</span>
+            <span class="s-label">About</span>
+            <span class="s-value">Cortex OS 1.0</span>
+            <span class="s-arrow">›</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /app-content -->
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+      <div class="tab-item active" data-tab="today" onclick="switchTab('today')">
+        <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+        <span>Today</span>
+      </div>
+      <div class="tab-item" data-tab="calendar" onclick="switchTab('calendar')">
+        <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+        <span>Calendar</span>
+      </div>
+      <div class="tab-item" data-tab="messages" onclick="switchTab('messages')">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/></svg>
+        <span>Messages</span>
+      </div>
+      <div class="tab-item" data-tab="home" onclick="switchTab('home')">
+        <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 2.84L18 11v7h-4v-6H10v6H6v-7l6-5.16z"/></svg>
+        <span>Home</span>
+      </div>
+      <div class="tab-item" data-tab="wallet" onclick="switchTab('wallet')">
+        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <span>Wallet</span>
+      </div>
+      <div class="tab-item" data-tab="settings" onclick="switchTab('settings')">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <span>Settings</span>
+      </div>
+    </div>
+
+    <!-- Home Indicator -->
+    <div class="home-indicator"></div>
+  </div><!-- /phone-screen -->
+</div><!-- /phone -->
+
+<script>
+  // ===== CLOCK =====
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours().toString().padStart(2, '0');
+    const m = now.getMinutes().toString().padStart(2, '0');
+    document.getElementById('statusTime').textContent = h + ':' + m;
+
+    const hour = now.getHours();
+    let greeting = 'evening';
+    if (hour < 12) greeting = 'morning';
+    else if (hour < 17) greeting = 'afternoon';
+    document.getElementById('greetingTime').textContent = greeting;
+  }
+  updateClock();
+  setInterval(updateClock, 30000);
+
+  // ===== TAB SWITCHING =====
+  function switchTab(tabId) {
+    // Update tabs
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
+
+    // Update pages
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const page = document.getElementById('page-' + tabId);
+    if (page) {
+      page.classList.add('active');
+      // Re-trigger animation
+      page.style.animation = 'none';
+      page.offsetHeight;
+      page.style.animation = '';
+    }
+
+    // Scroll to top
+    document.getElementById('appContent').scrollTop = 0;
+
+    // Haptic feedback simulation
+    if (navigator.vibrate) navigator.vibrate(8);
+  }
+
+  // ===== NAVIGATE (from quick actions) =====
+  function navigateTo(page) {
+    switchTab(page);
+  }
+
+  // ===== TOGGLE SWITCH =====
+  function toggleSwitch(el) {
+    el.classList.toggle('on');
+    if (navigator.vibrate) navigator.vibrate(6);
+  }
+
+  // ===== PARALLAX GLOW (mouse move on desktop) =====
+  document.addEventListener('DOMContentLoaded', function() {
+    const phone = document.querySelector('.phone');
+    const glows = document.querySelectorAll('.ambient-glow');
+
+    phone.addEventListener('mousemove', function(e) {
+      const rect = phone.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+
+      glows.forEach((glow, i) => {
+        const factor = i === 0 ? 30 : 30;
+        const dx = (x - 0.5) * factor;
+        const dy = (y - 0.5) * factor;
+        glow.style.transform = `translate(${dx}px, ${dy}px)`;
+      });
+    });
+
+    phone.addEventListener('mouseleave', function() {
+      glows.forEach(g => g.style.transform = 'translate(0, 0)');
+    });
+  });
+</script>
+
+</body>
+</html>
