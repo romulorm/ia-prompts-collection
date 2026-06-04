@@ -14,4 +14,6 @@ Keep everything in one HTML file with the CSS and JavaScript included. Name the 
 
 Once finished, review your code, make sure everything works correctly, and fix anything broken or incomplete before giving the final answer.
 
+---
+
 Credits to [Token Chaser](https://tokenchaser.net)
