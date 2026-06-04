@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iOS App UI</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--phone-w:393px;--phone-h:852px;--phone-r:47px;
+--status-h:54px;--tab-h:83px;--home-ind:h(34px);
+--content-h:calc(var(--phone-h)-var(--status-h)-var(--tab-h));
+--accent:#007AFF;--green:#34C759;--orange:#FF9500;
+--red:#FF3B30;--purple:#AF52DE;--pink:#FF2D55;
+--teal:#5AC8FA;--gray:#8E8E93;--bg:#F2F2F7;
+--card-bg:rgba(255,255,255,.82);--glass:rgba(255,255,255,.65);
+}
+html,body{height:100%;display:flex;align-items:center;justify-content:center;background:#1a1a2e;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+
+/* Phone Frame */
+.phone-frame{position:relative;width:var(--phone-w);height:var(--phone-h);border-radius:var(--phone-r);background:#1c1c1e;box-shadow:0 0 0 2px #3a3a3c,0 0 0 4px #111,0 20px 60px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.08);overflow:hidden;flex-shrink:0}
+.phone-frame::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:126px;height:37px;background:#0a0a0a;border-radius:20px;z-index:100;box-shadow:inset 0 0 2px rgba(255,255,255,.1)}
+.phone-frame::after{content:'';position:absolute;top:8px;left:calc(50% + 72px);width:12px;height:12px;background:radial-gradient(circle,#2a2a3e 40%,#1a1a2e 60%);border-radius:50%;z-index:99}
+
+/* Side Buttons */
+.phone-frame .side-btn{position:absolute;width:3px;background:#2c2c2e;border-radius:2px;z-index:50}
+.phone-frame .side-btn.vol-up{top:140px;left:-4px;height:56px}
+.phone-frame .side-btn.vol-down{top:204px;left:-4px;height:56px}
+.phone-frame .side-btn.power{top:170px;right:-4px;height:80px}
+
+/* Screen */
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;border-radius:var(--phone-r)}
+.wallpaper{position:absolute;inset:0;background:linear-gradient(160deg,#667eea 0%,#764ba2 35%,#f093fb 65%,#f5576c 100%);z-index:0}
+
+/* Status Bar */
+.status-bar{position:relative;height:var(--status-h);display:flex;align-items:flex-end;justify-content:space-between;padding:0 32px 8px;z-index:90;color:#fff;font-size:15px;font-weight:600}
+.status-bar .time{font-size:16px}
+.status-bar .icons{display:flex;gap:5px;align-items:center;font-size:14px}
+.status-bar .icons svg{width:18px;height:18px}
+
+/* Home Indicator */
+.home-indicator{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;background:rgba(255,255,255,.35);border-radius:3px;z-index:90}
+
+/* App Container */
+.app{position:absolute;top:var(--status-h);left:0;width:100%;height:calc(var(--phone-h)-var(--status-h));display:flex;flex-direction:column;z-index:10}
+
+/* Header */
+.app-header{padding:12px 20px 8px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.1);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px)}
+.app-header .model-name{font-size:13px;color:rgba(255,255,255,.7);letter-spacing:.5px;font-weight:500}
+.app-header h1{font-size:34px;font-weight:700;color:#fff;letter-spacing:-.5px}
+
+/* Content Area */
+.content-area{flex:1;overflow-y:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.content-area::-webkit-scrollbar{display:none}
+
+/* Tab Views */
+.tab-view{display:none;padding:0 20px}
+.tab-view.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Cards */
+.card{background:var(--card-bg);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.card-title{font-size:17px;font-weight:600;color:#1c1c1e;margin-bottom:8px}
+.card-subtitle{font-size:13px;color:var(--gray);margin-bottom:4px}
+
+/* Today Section */
+.greeting-card{text-align:center;padding:24px 16px;background:linear-gradient(135deg,rgba(0,122,255,.85),rgba(52,199,89,.85));color:#fff;border-radius:16px;margin-bottom:12px}
+.greeting-card .greet{font-size:28px;font-weight:700;margin-bottom:4px}
+.greeting-card .date{font-size:15px;opacity:.85}
+
+.weather-widget{display:flex;align-items:center;gap:16px;padding:16px}
+.weather-icon{font-size:48px}
+.weather-temp{font-size:42px;font-weight:300;color:#1c1c1e}
+.weather-detail{font-size:13px;color:var(--gray)}
+
+.activity-ring{display:flex;gap:12px;margin-top:12px}
+.ring-item{text-align:center}
+.ring-circle{width:56px;height:56px;border-radius:50%;border:4px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-bottom:4px;position:relative}
+.ring-circle.move{border-color:#FF3B30;background:conic-gradient(#FF3B30 65%,#e0e0e0 65%)}
+.ring-circle.exercise{border-color:#30D158;background:conic-gradient(#30D158 45%,#e0e0e0 45%)}
+.ring-circle.stand{border-color:#FFD60A;background:conic-gradient(#FFD60A 72%,#e0e0e0 72%)}
+.ring-label{font-size:11px;color:var(--gray)}
+
+.quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.action-btn{background:linear-gradient(135deg,var(--accent),#5856D6);border-radius:12px;padding:14px 8px;text-align:center;color:#fff;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:transform .15s ease,box-shadow .15s ease;box-shadow:0 3px 8px rgba(0,122,255,.3)}
+.action-btn.green{background:linear-gradient(135deg,var(--green),#28A745);box-shadow:0 3px 8px rgba(52,199,89,.3)}
+.action-btn.orange{background:linear-gradient(135deg,var(--orange),#E68600);box-shadow:0 3px 8px rgba(255,149,0,.3)}
+.action-btn.purple{background:linear-gradient(135deg,var(--purple),#8B3FAD);box-shadow:0 3px 8px rgba(175,82,222,.3)}
+.action-btn .icon{font-size:24px;display:block;margin-bottom:6px}
+.action-btn:active{transform:scale(.92);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+
+/* Calendar Section */
+.event-card{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.event-card:last-child{border-bottom:none}
+.event-time{font-size:13px;font-weight:600;color:var(--accent);min-width:52px;text-align:right;padding-top:2px}
+.event-info .event-title{font-size:15px;font-weight:600;color:#1c1c1e}
+.event-info .event-desc{font-size:13px;color:var(--gray);margin-top:2px}
+.event-dot{width:4px;height:40px;border-radius:2px;flex-shrink:0}
+.event-dot.blue{background:var(--accent)}
+.event-dot.green{background:var(--green)}
+.event-dot.orange{background:var(--orange)}
+.event-dot.purple{background:var(--purple)}
+
+.month-selector{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.month-selector::-webkit-scrollbar{display:none}
+.month-day{text-align:center;padding:8px 6px;border-radius:12px;min-width:44px;cursor:pointer;transition:background .2s ease}
+.month-day .day-num{font-size:18px;font-weight:600;color:#1c1c1e}
+.month-day .day-name{font-size:10px;color:var(--gray);margin-top:2px}
+.month-day.today{background:var(--accent);color:#fff}
+.month-day.today .day-num,.month-day.today .day-name{color:#fff}
+
+/* Messages Section */
+.msg-preview{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.msg-preview:last-child{border-bottom:none}
+.msg-avatar{width:48px;height:48px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff}
+.msg-avatar.a1{background:linear-gradient(135deg,var(--accent),#5856D6)}
+.msg-avatar.a2{background:linear-gradient(135deg,var(--green),#28A745)}
+.msg-avatar.a3{background:linear-gradient(135deg,var(--orange),#E68600)}
+.msg-avatar.a4{background:linear-gradient(135deg,var(--purple),#8B3FAD)}
+.msg-avatar.a5{background:linear-gradient(135deg,var(--pink),#D91A4E)}
+.msg-content{flex:1;min-width:0}
+.msg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.msg-name{font-size:16px;font-weight:600;color:#1c1c1e}
+.msg-time{font-size:13px;color:var(--gray)}
+.msg-text{font-size:14px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-badge{background:var(--accent);color:#fff;font-size:12px;font-weight:700;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px}
+
+/* Smart Home Section */
+.room-card{padding:16px;margin-bottom:12px;background:var(--card-bg);border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.room-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.room-name{font-size:17px;font-weight:600;color:#1c1c1e}
+.room-status{font-size:13px;padding:4px 10px;border-radius:8px;font-weight:500}
+.room-status.on{background:rgba(52,199,89,.15);color:var(--green)}
+.room-status.off{background:rgba(142,142,147,.15);color:var(--gray)}
+
+.device-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.device-btn{background:#f6f6f7;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;border:none;transition:all .2s ease;font-size:12px;color:#1c1c1e}
+.device-btn.active{background:rgba(0,122,255,.1);color:var(--accent)}
+.device-btn .d-icon{font-size:22px;display:block;margin-bottom:4px}
+.device-btn:active{transform:scale(.93)}
+
+/* Toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:15px;color:#1c1c1e;font-weight:500}
+
+.toggle-switch{width:51px;height:31px;border-radius:16px;background:#E9E9EB;position:relative;cursor:pointer;transition:background .25s ease;border:none}
+.toggle-switch.on{background:var(--green)}
+.toggle-switch::after{content:'';position:absolute;top:2px;left:2px;width:27px;height:27px;background:#fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.15);transition:left .25s ease}
+.toggle-switch.on::after{left:22px}
+
+/* Slider */
+.slider-row{padding:10px 0;display:flex;align-items:center;gap:12px}
+.slider-label{font-size:15px;color:#1c1c1e;font-weight:500;min-width:80px}
+.slider-track{flex:1;height:6px;background:#E9E9EB;border-radius:3px;position:relative;cursor:pointer}
+.slider-fill{height:100%;background:var(--accent);border-radius:3px;width:65%;transition:width .2s ease}
+
+/* Wallet Section */
+.card-visual{padding:24px 20px;border-radius:16px;margin-bottom:12px;color:#fff;position:relative;overflow:hidden}
+.card-visual.c1{background:linear-gradient(135deg,#1c1c1e,#3a3a3c)}
+.card-visual.c2{background:linear-gradient(135deg,var(--accent),#5856D6)}
+.card-visual .cv-label{font-size:13px;opacity:.7;margin-bottom:16px}
+.card-visual .cv-number{font-size:18px;font-weight:500;letter-spacing:2px;margin-bottom:16px;font-family:'SF Mono',Monaco,monospace}
+.card-visual .cv-bottom{display:flex;justify-content:space-between;font-size:13px}
+
+.balance-card{text-align:center;padding:24px;background:linear-gradient(135deg,var(--green),#28A745);border-radius:16px;color:#fff;margin-bottom:12px}
+.balance-amount{font-size:40px;font-weight:700;margin-bottom:4px}
+.balance-label{font-size:14px;opacity:.8}
+
+.transaction-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.transaction-item:last-child{border-bottom:none}
+.tx-left{display:flex;gap:10px;align-items:center}
+.tx-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.tx-icon.food{background:rgba(255,149,0,.15)}
+.tx-icon.shop{background:rgba(0,122,255,.15)}
+.tx-icon.transfer{background:rgba(52,199,89,.15)}
+.tx-name{font-size:15px;font-weight:500;color:#1c1c1e}
+.tx-date{font-size:12px;color:var(--gray);margin-top:2px}
+.tx-amount{font-size:16px;font-weight:600}
+.tx-amount.neg{color:var(--red)}
+.tx-amount.pos{color:var(--green)}
+
+/* Settings Section */
+.settings-group{background:var(--card-bg);border-radius:16px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.setting-item{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer}
+.setting-item:last-child{border-bottom:none}
+.setting-item:active{background:rgba(0,0,0,.04)}
+.setting-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-right:12px;color:#fff}
+.setting-icon.blue{background:var(--accent)}
+.setting-icon.green{background:var(--green)}
+.setting-icon.orange{background:var(--orange)}
+.setting-icon.gray{background:var(--gray)}
+.setting-icon.purple{background:var(--purple)}
+.setting-text{flex:1;font-size:15px;color:#1c1c1e}
+.setting-arrow{color:var(--gray);font-size:14px;margin-left:8px}
+
+/* Notification Cards */
+.notification{position:absolute;top:60px;left:20px;right:20px;background:rgba(255,255,255,.92);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:16px;padding:14px 16px;z-index:80;box-shadow:0 8px 30px rgba(0,0,0,.12);transform:translateY(-120%);transition:transform .4s cubic-bezier(.25,.8,.25,1)}
+.notification.show{transform:translateY(0)}
+.notif-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.notif-app-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.notif-app-name{font-size:13px;font-weight:700;color:#1c1c1e}
+.notif-time-label{font-size:12px;color:var(--gray);margin-left:auto}
+.notif-title{font-size:15px;font-weight:600;color:#1c1c1e;margin-bottom:2px}
+.notif-body{font-size:14px;color:var(--gray)}
+
+/* Bottom Tab Bar */
+.tab-bar{height:var(--tab-h);display:flex;align-items:flex-start;padding-top:8px;background:rgba(255,255,255,.92);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-top:1px solid rgba(0,0,0,.06);z-index:90}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:4px 0;cursor:pointer;border:none;background:none;font-size:10px;color:var(--gray);transition:color .2s ease}
+.tab-item.active{color:var(--accent)}
+.tab-item .tab-icon{font-size:22px;margin-bottom:2px;transition:transform .15s ease}
+.tab-item:active .tab-icon{transform:scale(.85)}
+
+/* Responsive */
+@media(max-width:420px){.phone-frame{width:100vw;height:100vh;border-radius:0;box-shadow:none}.phone-frame::before,.phone-frame::after,.phone-frame .side-btn{display:none}}
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="side-btn vol-up"></div>
+  <div class="side-btn vol-down"></div>
+  <div class="side-btn power"></div>
+  <div class="screen">
+    <div class="wallpaper"></div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span class="time" id="statusTime">9:41</span>
+      <div class="icons">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 8.025c0-1.36 1.07-2.425 2.425-2.425h1.75v2.85H3.425v-.725h1.75v1.5h-1.75v-.725H2.425c-.625 0-1.125.5-1.125 1.125v8.75c0 .625.5 1.125 1.125 1.125h1.75v-.725h1.75v1.5H3.425v-.725h1.75v-2.85H2.425C1.07 16.425 0 15.36 0 14.025V8.025z"/><path d="M6.425 5.6h2.85v12.8h-2.85z"/><path d="M10.425 3.975h2.85v14.425h-2.85z"/><path d="M14.425 2.35h2.85v16.05h-2.85z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm-2-6l6-4h-4V6l-2 4v4z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 3A2.5 2.5 0 0015 5.5v1A2.5 2.5 0 0017.5 9h.5a2.5 2.5 0 002.5-2.5v-1A2.5 2.5 0 0018 3h-.5zM4 6A2 2 0 002 8v8a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2H4zm1 3h14v7H5V9z"/></svg>
+        <span style="font-size:13px">100%</span>
+      </div>
+    </div>
+
+    <!-- App -->
+    <div class="app">
+      <!-- Header -->
+      <div class="app-header">
+        <span class="model-name" id="modelName">qwen3.6-35b-a3b-mtp</span>
+        <h1 id="headerTitle">Today</h1>
+      </div>
+
+      <!-- Content -->
+      <div class="content-area">
+
+        <!-- TODAY Tab -->
+        <div class="tab-view active" id="tab-today">
+          <div class="greeting-card">
+            <div class="greet" id="greetingText">Good Morning</div>
+            <div class="date" id="dateText"></div>
+          </div>
+
+          <div class="card weather-widget">
+            <div class="weather-icon">☀️</div>
+            <div>
+              <div class="weather-temp">72°</div>
+              <div class="weather-detail">Partly Cloudy · H:78° L:64°</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Activity</div>
+            <div class="activity-ring">
+              <div class="ring-item"><div class="ring-circle move">65%</div><div class="ring-label">Move</div></div>
+              <div class="ring-item"><div class="ring-circle exercise">45%</div><div class="ring-label">Exercise</div></div>
+              <div class="ring-item"><div class="ring-circle stand">72%</div><div class="ring-label">Stand</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Quick Actions</div>
+            <div class="quick-actions">
+              <button class="action-btn"><span class="icon">🏃</span>Run</button>
+              <button class="action-btn green"><span class="icon">💧</span>Water</button>
+              <button class="action-btn orange"><span class="icon">🍎</span>Eat</button>
+              <button class="action-btn purple"><span class="icon">😴</span>Sleep</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Reminders</div>
+            <div class="toggle-row"><span class="toggle-label">Team standup at 10am</span><input type="checkbox" checked style="accent-color:var(--accent)"></div>
+            <div class="toggle-row"><span class="toggle-label">Review design mockups</span><input type="checkbox" checked style="accent-color:var(--accent)"></div>
+            <div class="toggle-row"><span class="toggle-label">Call dentist for appointment</span></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Notes</div>
+            <div style="font-size:14px;color:#1c1c1e;line-height:1.5">Meeting notes from product review — action items for Q3 roadmap and user feedback integration.</div>
+          </div>
+        </div>
+
+        <!-- CALENDAR Tab -->
+        <div class="tab-view" id="tab-calendar">
+          <div class="month-selector">
+            <div class="month-day"><div class="day-name">Mon</div><div class="day-num">1</div></div>
+            <div class="month-day"><div class="day-name">Tue</div><div class="day-num">2</div></div>
+            <div class="month-day"><div class="day-name">Wed</div><div class="day-num">3</div></div>
+            <div class="month-day today"><div class="day-name">Thu</div><div class="day-num">4</div></div>
+            <div class="month-day"><div class="day-name">Fri</div><div class="day-num">5</div></div>
+            <div class="month-day"><div class="day-name">Sat</div><div class="day-num">6</div></div>
+            <div class="month-day"><div class="day-name">Sun</div><div class="day-num">7</div></div>
+            <div class="month-day"><div class="day-name">Mon</div><div class="day-num">8</div></div>
+            <div class="month-day"><div class="day-name">Tue</div><div class="day-num">9</div></div>
+          </div>
+
+          <div class="card" style="padding:16px 20px">
+            <div class="event-card"><div class="event-dot blue"></div><div class="event-time">9:00 AM</div><div class="event-info"><div class="event-title">Product Review Meeting</div><div class="event-desc">Conference Room B · 1 hour</div></div></div>
+            <div class="event-card"><div class="event-dot green"></div><div class="event-time">11:30 AM</div><div class="event-info"><div class="event-title">Design Sprint Workshop</div><div class="event-desc">Virtual · 2 hours</div></div></div>
+            <div class="event-card"><div class="event-dot orange"></div><div class="event-time">1:00 PM</div><div class="event-info"><div class="event-title">Lunch with Sarah</div><div class="event-desc">Café Milano · 30 min</div></div></div>
+            <div class="event-card"><div class="event-dot purple"></div><div class="event-time">3:00 PM</div><div class="event-info"><div class="event-title">Code Review Session</div><div class="event-desc">Engineering Team · 45 min</div></div></div>
+            <div class="event-card"><div class="event-dot blue"></div><div class="event-time">5:00 PM</div><div class="event-info"><div class="event-title">Gym Workout</div><div class="event-desc">Fitness Center · 1 hour</div></div></div>
+          </div>
+
+          <div class="card" style="padding:16px 20px">
+            <div class="card-title">Upcoming Events</div>
+            <div class="event-card"><div class="event-dot green"></div><div class="event-time">Tomorrow</div><div class="event-info"><div class="event-title">Team Offsite Planning</div><div class="event-desc">All day · Downtown venue</div></div></div>
+            <div class="event-card"><div class="event-dot orange"></div><div class="event-time">Jun 6</div><div class="event-info"><div class="event-title">Project Deadline</div><div class="event-desc">Submit final deliverables</div></div></div>
+          </div>
+        </div>
+
+        <!-- MESSAGES Tab -->
+        <div class="tab-view" id="tab-messages">
+          <div class="card" style="padding:16px 20px">
+            <div class="msg-preview"><div class="msg-avatar a1">👩</div><div class="msg-content"><div class="msg-header"><span class="msg-name">Sarah Chen</span><span class="msg-time">9:32 AM</span></div><div class="msg-text">Hey! Are we still on for the design review today? I've updated the mockups.</div></div><div class="msg-badge">3</div></div>
+            <div class="msg-preview"><div class="msg-avatar a2">👨</div><div class="msg-content"><div class="msg-header"><span class="msg-name">Alex Rivera</span><span class="msg-time">8:15 AM</span></div><div class="msg-text">The new feature is live! Check out the analytics dashboard.</div></div></div>
+            <div class="msg-preview"><div class="msg-avatar a3">👩‍💻</div><div class="msg-content"><div class="msg-header"><span class="msg-name">Priya Patel</span><span class="msg-time">Yesterday</span></div><div class="msg-text">Can you review the PR I submitted? Need your feedback before merge.</div></div><div class="msg-badge">1</div></div>
+            <div class="msg-preview"><div class="msg-avatar a4">🧑</div><div class="msg-content"><div class="msg-header"><span class="msg-name">Marcus Johnson</span><span class="msg-time">Yesterday</span></div><div class="msg-text">Great presentation yesterday! The client loved the new UI concepts.</div></div></div>
+            <div class="msg-preview"><div class="msg-avatar a5">👩‍🎨</div><div class="msg-content"><div class="msg-header"><span class="msg-name">Emma Wilson</span><span class="msg-time">Mon</span></div><div class="msg-text">I finished the icon set. Sending over the Figma link now.</div></div></div>
+          </div>
+
+          <div class="card" style="padding:16px 20px">
+            <div class="card-title">Groups</div>
+            <div class="msg-preview"><div class="msg-avatar a1" style="background:linear-gradient(135deg,var(--teal),#4AB8EA)">👥</div><div class="msg-content"><div class="msg-header"><span class="msg-name">Engineering Team</span><span class="msg-time">9:00 AM</span></div><div class="msg-text">DevOps: staging deployment complete. All tests passing.</div></div><div class="msg-badge">12</div></div>
+            <div class="msg-preview"><div class="msg-avatar a3" style="background:linear-gradient(135deg,var(--pink),#D91A4E)">🎨</div><div class="msg-content"><div class="msg-header"><span class="msg-name">Design Crew</span><span class="msg-time">7:45 AM</span></div><div class="msg-text">New brand guidelines approved. Let's update the components.</div></div></div>
+          </div>
+        </div>
+
+        <!-- SMART HOME Tab -->
+        <div class="tab-view" id="tab-smart-home">
+          <div class="room-card">
+            <div class="room-header"><span class="room-name">Living Room</span><span class="room-status on">Active</span></div>
+            <div class="device-grid">
+              <button class="device-btn active" onclick="toggleDevice(this)"><span class="d-icon">💡</span>Lights</button>
+              <button class="device-btn active" onclick="toggleDevice(this)"><span class="d-icon">🌡️</span>Thermostat</button>
+              <button class="device-btn" onclick="toggleDevice(this)"><span class="d-icon">📺</span>TV</button>
+              <button class="device-btn active" onclick="toggleDevice(this)"><span class="d-icon">🔊</span>Speaker</button>
+              <button class="device-btn" onclick="toggleDevice(this)"><span class="d-icon">🎵</span>Music</button>
+              <button class="device-btn active" onclick="toggleDevice(this)"><span class="d-icon">🔒</span>Lock</button>
+            </div>
+          </div>
+
+          <div class="room-card">
+            <div class="room-header"><span class="room-name">Kitchen</span><span class="room-status off">Inactive</span></div>
+            <div class="device-grid">
+              <button class="device-btn" onclick="toggleDevice(this)"><span class="d-icon">💡</span>Lights</button>
+              <button class="device-btn active" onclick="toggleDevice(this)"><span class="d-icon">❄️</span>Fridge</button>
+              <button class="device-btn" onclick="toggleDevice(this)"><span class="d-icon">☕</span>Coffee</button>
+            </div>
+          </div>
+
+          <div class="room-card">
+            <div class="room-header"><span class="room-name">Bedroom</span><span class="room-status on">Active</span></div>
+            <div class="device-grid">
+              <button class="device-btn active" onclick="toggleDevice(this)"><span class="d-icon">💡</span>Lights</button>
+              <button class="device-btn active" onclick="toggleDevice(this)"><span class="d-icon">🌡️</span>Thermostat</button>
+              <button class="device-btn" onclick="toggleDevice(this)"><span class="d-icon">🔊</span>Speaker</button>
+            </div>
+          </div>
+
+          <div class="card" style="padding:16px 20px">
+            <div class="card-title">Automation</div>
+            <div class="toggle-row"><span class="toggle-label">Auto lights at sunset</span><button class="toggle-switch on" onclick="toggleSwitch(this)"></button></div>
+            <div class="toggle-row"><span class="toggle-label">Climate schedule</span><button class="toggle-switch on" onclick="toggleSwitch(this)"></button></div>
+            <div class="toggle-row"><span class="toggle-label">Security mode at night</span><button class="toggle-switch" onclick="toggleSwitch(this)"></button></div>
+          </div>
+
+          <div class="card" style="padding:16px 20px">
+            <div class="card-title">Brightness</div>
+            <div class="slider-row"><span class="slider-label">Living Room</span><div class="slider-track"><div class="slider-fill"></div></div></div>
+            <div class="slider-row"><span class="slider-label">Bedroom</span><div class="slider-track"><div class="slider-fill" style="width:30%"></div></div></div>
+          </div>
+        </div>
+
+        <!-- WALLET Tab -->
+        <div class="tab-view" id="tab-wallet">
+          <div class="card-visual c1">
+            <div class="cv-label">Visa · Platinum</div>
+            <div class="cv-number">•••• •••• •••• 4829</div>
+            <div class="cv-bottom"><span>Alex Morgan</span><span>09/27</span></div>
+          </div>
+
+          <div class="card-visual c2">
+            <div class="cv-label">Apple Card</div>
+            <div class="cv-number">•••• •••• •••• 1063</div>
+            <div class="cv-bottom"><span>Alex Morgan</span><span>12/28</span></div>
+          </div>
+
+          <div class="balance-card">
+            <div class="balance-label">Total Balance</div>
+            <div class="balance-amount">$4,832.50</div>
+            <div class="balance-label">Updated just now</div>
+          </div>
+
+          <div class="card" style="padding:16px 20px">
+            <div class="card-title">Recent Transactions</div>
+            <div class="transaction-item"><div class="tx-left"><div class="tx-icon food">🍕</div><div><div class="tx-name">Pizza Palace</div><div class="tx-date">Today, 12:30 PM</div></div></div><div class="tx-amount neg">-$24.50</div></div>
+            <div class="transaction-item"><div class="tx-left"><div class="tx-icon shop">🛒</div><div><div class="tx-name">Grocery Store</div><div class="tx-date">Today, 9:15 AM</div></div></div><div class="tx-amount neg">-$67.32</div></div>
+            <div class="transaction-item"><div class="tx-left"><div class="tx-icon transfer">💰</div><div><div class="tx-name">Salary Deposit</div><div class="tx-date">Yesterday</div></div></div><div class="tx-amount pos">+$3,200.00</div></div>
+            <div class="transaction-item"><div class="tx-left"><div class="tx-icon shop">📱</div><div><div class="tx-name">App Store</div><div class="tx-date">Jun 2</div></div></div><div class="tx-amount neg">-$4.99</div></div>
+            <div class="transaction-item"><div class="tx-left"><div class="tx-icon food">☕</div><div><div class="tx-name">Coffee Shop</div><div class="tx-date">Jun 1</div></div></div><div class="tx-amount neg">-$5.75</div></div>
+          </div>
+
+          <div class="card" style="padding:16px 20px">
+            <div class="card-title">Spending This Week</div>
+            <div style="display:flex;align-items:end;gap:8px;height:80px;padding-top:8px">
+              <div style="flex:1;background:var(--accent);border-radius:6px 6px 0 0;height:45%;opacity:.7"></div>
+              <div style="flex:1;background:var(--accent);border-radius:6px 6px 0 0;height:70%"></div>
+              <div style="flex:1;background:var(--accent);border-radius:6px 6px 0 0;height:35%;opacity:.7"></div>
+              <div style="flex:1;background:var(--green);border-radius:6px 6px 0 0;height:90%"></div>
+              <div style="flex:1;background:var(--accent);border-radius:6px 6px 0 0;height:55%"></div>
+              <div style="flex:1;background:var(--orange);border-radius:6px 6px 0 0;height:80%"></div>
+              <div style="flex:1;background:var(--accent);border-radius:6px 6px 0 0;height:25%;opacity:.5"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--gray)">
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTINGS Tab -->
+        <div class="tab-view" id="tab-settings">
+          <div class="settings-group">
+            <div class="setting-item"><div class="setting-icon blue">⚙️</div><span class="setting-text">General</span><span class="setting-arrow">›</span></div>
+            <div class="setting-item"><div class="setting-icon green">🔒</div><span class="setting-text">Privacy & Security</span><span class="setting-arrow">›</span></div>
+            <div class="setting-item"><div class="setting-icon purple">🎨</div><span class="setting-text">Appearance</span><span class="setting-arrow">›</span></div>
+          </div>
+
+          <div class="settings-group">
+            <div class="setting-item"><div class="setting-icon blue">🔔</div><span class="setting-text">Notifications</span><span class="setting-arrow">›</span></div>
+            <div class="toggle-row" style="padding:12px 16px;border-bottom:none"><span class="toggle-label">Push Notifications</span><button class="toggle-switch on" onclick="toggleSwitch(this)"></button></div>
+            <div class="toggle-row" style="padding:12px 16px;border-bottom:none"><span class="toggle-label">Sound Effects</span><button class="toggle-switch on" onclick="toggleSwitch(this)"></button></div>
+          </div>
+
+          <div class="settings-group">
+            <div class="setting-item"><div class="setting-icon orange">🔊</div><span class="setting-text">Sound & Haptics</span><span class="setting-arrow">›</span></div>
+            <div class="slider-row" style="padding:12px 16px"><span class="slider-label">Volume</span><div class="slider-track"><div class="slider-fill" style="width:80%"></div></div></div>
+          </div>
+
+          <div class="settings-group">
+            <div class="setting-item"><div class="setting-icon green">📶</div><span class="setting-text">Network</span><span class="setting-arrow">›</span></div>
+            <div class="setting-item"><div class="setting-icon blue">🔋</div><span class="setting-text">Battery</span><span class="setting-arrow">›</span></div>
+          </div>
+
+          <div class="settings-group">
+            <div class="setting-item"><div class="setting-icon gray">👤</div><span class="setting-text">Account</span><span class="setting-arrow">›</span></div>
+            <div class="setting-item"><div class="setting-icon purple">☁️</div><span class="setting-text">Cloud Storage</span><span class="setting-arrow">›</span></div>
+          </div>
+
+          <div class="settings-group" style="margin-top:16px">
+            <div class="setting-item"><div class="setting-icon gray">ℹ️</div><span class="setting-text">Version 2.4.1 (Build 892)</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-item active" data-tab="today"><span class="tab-icon">📅</span><span>Today</span></button>
+        <button class="tab-item" data-tab="calendar"><span class="tab-icon">🗓️</span><span>Calendar</span></button>
+        <button class="tab-item" data-tab="messages"><span class="tab-icon">💬</span><span>Messages</span></button>
+        <button class="tab-item" data-tab="smart-home"><span class="tab-icon">🏠</span><span>Smart Home</span></button>
+        <button class="tab-item" data-tab="wallet"><span class="tab-icon">💳</span><span>Wallet</span></button>
+        <button class="tab-item" data-tab="settings"><span class="tab-icon">⚙️</span><span>Settings</span></button>
+      </div>
+
+    </div>
+
+    <!-- Home Indicator -->
+    <div class="home-indicator"></div>
+
+    <!-- Notifications -->
+    <div class="notification" id="notif1">
+      <div class="notif-header"><div class="notif-app-icon" style="background:var(--green)">💬</div><span class="notif-app-name">Messages</span><span class="notif-time-label">now</span></div>
+      <div class="notif-title">Sarah Chen</div>
+      <div class="notif-body">Hey! Are we still on for the design review today?</div>
+    </div>
+
+    <div class="notification" id="notif2">
+      <div class="notif-header"><div class="notif-app-icon" style="background:var(--accent)">📅</div><span class="notif-app-name">Calendar</span><span class="notif-time-label">2m ago</span></div>
+      <div class="notif-title">Product Review Meeting</div>
+      <div class="notif-body">Starting in 30 minutes · Conference Room B</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Set current time and date
+function updateTime(){
+  const now=new Date();
+  const h=now.getHours(),m=now.getMinutes();
+  document.getElementById('statusTime').textContent=h+':'+(m<10?'0':'')+m;
+  const opts={weekday:'long',month:'long',day:'numeric'};
+  document.getElementById('dateText').textContent=now.toLocaleDateString('en-US',opts);
+  const hour=now.getHours();
+  let greet='Good Morning';
+  if(hour>=12&&hour<17)greet='Good Afternoon';
+  else if(hour>=17)greet='Good Evening';
+  document.getElementById('greetingText').textContent=greet;
+}
+updateTime();
+
+// Tab Navigation
+const tabs=document.querySelectorAll('.tab-item');
+const views=document.querySelectorAll('.tab-view');
+const headerTitle=document.getElementById('headerTitle');
+const tabNames={today:'Today',calendar:'Calendar',messages:'Messages','smart-home':'Smart Home',wallet:'Wallet',settings:'Settings'};
+
+tabs.forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    tabs.forEach(t=>t.classList.remove('active'));
+    views.forEach(v=>v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    headerTitle.textContent=tabNames[tab.dataset.tab];
+  });
+});
+
+// Toggle Switches
+function toggleSwitch(el){
+  el.classList.toggle('on');
+}
+
+// Device Buttons
+function toggleDevice(el){
+  el.classList.toggle('active');
+}
+
+// Show notifications after delay
+setTimeout(()=>{document.getElementById('notif1').classList.add('show')},2000);
+setTimeout(()=>{document.getElementById('notif2').classList.add('show')},5000);
+
+// Hide notifications after showing
+setTimeout(()=>{document.getElementById('notif1').classList.remove('show')},8000);
+setTimeout(()=>{document.getElementById('notif2').classList.remove('show')},12000);
+
+// Re-show cycle
+setInterval(()=>{
+  document.getElementById('notif1').classList.add('show');
+  setTimeout(()=>document.getElementById('notif1').classList.remove('show'),6000);
+},15000);
+
+setInterval(()=>{
+  document.getElementById('notif2').classList.add('show');
+  setTimeout(()=>document.getElementById('notif2').classList.remove('show'),6000);
+},22000);
+</script>
+</body>
+</html>
