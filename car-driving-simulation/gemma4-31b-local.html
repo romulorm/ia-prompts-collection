@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realistic Car Drive - Gemma 4</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #05050a; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let width, height, roadY;
+let time = 0;
+
+function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    roadY = height * 0.75;
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+// Helper for random ranges
+const rnd = (min, max) => Math.random() * (max - min) + min;
+
+class Layer {
+    constructor(speed, color, count, drawFn) {
+        this.speed = speed;
+        this.color = color;
+        this.count = count;
+        this.drawFn = drawFn;
+        this.elements = [];
+        for (let i = 0; i < count; i++) {
+            this.elements.push({ x: rnd(0, width * 2), offset: rnd(0, 100) });
+        }
+    }
+
+    update() {
+        this.elements.forEach(el => {
+            el.x -= this.speed;
+            if (el.x < -200) el.x = width + 200;
+        });
+    }
+
+    draw() {
+        ctx.fillStyle = this.color;
+        this.elements.forEach(el => this.drawFn(el.x, this.offset));
+    }
+}
+
+// Scene Elements
+const layers = [
+    new Layer(0.2, '#1a1b3a', 5, (x) => {
+        ctx.beginPath();
+        ctx.moveTo(x, roadY);
+        ctx.lineTo(x + 200, roadY - 150);
+        ctx.lineTo(x + 400, roadY);
+        ctx.fill();
+    }), // Far mountains
+    new Layer(0.6, '#2a2d5a', 8, (x) => {
+        ctx.beginPath();
+        ctx.moveTo(x, roadY);
+        ctx.lineTo(x + 100, roadY - 80);
+        ctx.lineTo(x + 200, roadY);
+        ctx.fill();
+    }), // Middle hills
+    new Layer(1.5, '#3a4a3a', 15, (x) => {
+        ctx.fillRect(x, roadY - 60, 10, 60);
+        ctx.beginPath();
+        ctx.arc(x + 5, roadY - 70, 20, 0, Math.PI * 2);
+        ctx.fill();
+    }), // Trees
+    new Layer(3.0, '#4a4a4a', 10, (x) => {
+        ctx.fillRect(x, roadY - 100, 5, 100);
+        ctx.fillRect(x - 10, roadY - 100, 25, 8);
+    }), // Poles
+];
+
+function drawSky() {
+    const grad = ctx.createLinearGradient(0, 0, 0, roadY);
+    grad.addColorStop(0, '#0a0b2e');
+    grad.addColorStop(0.6, '#4a3a6a');
+    grad.addColorStop(1, '#f5a67f'); // Sunset vibe
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, roadY);
+
+    // Sun
+    ctx.fillStyle = '#ffcc88';
+    ctx.beginPath();
+    ctx.arc(width * 0.8, height * 0.4, 60, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawRoad() {
+    // Ground
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, roadY, width, height - roadY);
+
+    // Road surface
+    ctx.fillStyle = '#333';
+    ctx.fillRect(0, roadY, width, 80);
+
+    // Lines
+    ctx.strokeStyle = '#fff';
+    ctx.setLineDash([40, 40]);
+    ctx.lineDashOffset = time * 10;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, roadY + 40);
+    ctx.lineTo(width, roadY + 40);
+    ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function drawCar() {
+    const carX = width * 0.25;
+    const bounce = Math.sin(time * 8) * 2;
+    const carY = roadY - 40 + bounce;
+
+    // Car shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(carX + 75, roadY + 10, 80, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body
+    ctx.fillStyle = '#d32f2f'; // Sporty red
+    ctx.beginPath();
+    ctx.moveTo(carX, carY);
+    ctx.lineTo(carX + 150, carY);
+    ctx.lineTo(carX + 140, carY - 30);
+    ctx.lineTo(carX + 80, carY - 60);
+    ctx.lineTo(carX + 40, carY - 60);
+    ctx.lineTo(carX + 20, carY - 30);
+    ctx.closePath();
+    ctx.fill();
+
+    // Windows
+    ctx.fillStyle = '#aaddff';
+    ctx.beginPath();
+    ctx.moveTo(carX + 45, carY - 35);
+    ctx.lineTo(carX + 75, carY - 55);
+    ctx.lineTo(carX + 100, carY - 55);
+    ctx.lineTo(carX + 120, carY - 35);
+    ctx.closePath();
+    ctx.fill();
+
+    // Wheels
+    const wheelRotation = time * 15;
+    drawWheel(carX + 35, roadY, wheelRotation);
+    drawWheel(carX + 120, roadY, wheelRotation);
+}
+
+function drawWheel(x, y, rot) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+
+    // Tire
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(0, 0, 20, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rim
+    ctx.fillStyle = '#888';
+    ctx.beginPath();
+    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Spokes
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(i * Math.PI * 0.4) * 12, Math.sin(i * Math.PI * 0.4) * 12);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+function loop() {
+    time += 0.02;
+    ctx.clearRect(0, 0, width, height);
+
+    drawSky();
+    
+    layers.forEach(layer => {
+        layer.update();
+        layer.draw();
+    });
+
+    drawRoad();
+    drawCar();
+
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>

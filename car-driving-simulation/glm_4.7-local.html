@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Car Parallax Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let scrollX = 0;
+        let speed = 3;
+        let carBodyOffset = 0;
+        let wheelRotation = 0;
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        
+        window.addEventListener('resize', resize);
+        resize();
+        
+        function drawSky() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, height * 0.6);
+            gradient.addColorStop(0, '#1a1a3e');
+            gradient.addColorStop(0.3, '#4a3a6e');
+            gradient.addColorStop(0.5, '#ff6b35');
+            gradient.addColorStop(0.7, '#ff8c42');
+            gradient.addColorStop(1, '#ffd700');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height * 0.6);
+        }
+        
+        function drawSun() {
+            const sunX = width * 0.7;
+            const sunY = height * 0.25;
+            const sunRadius = 60;
+            
+            const sunGradient = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunRadius);
+            sunGradient.addColorStop(0, '#fff5e6');
+            sunGradient.addColorStop(0.5, '#ffcc00');
+            sunGradient.addColorStop(1, 'rgba(255, 200, 0, 0)');
+            
+            ctx.fillStyle = sunGradient;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let i = 0; i < 5; i++) {
+                const x = ((scrollX * 0.3 + i * 300) % (width + 200)) - 100;
+                const y = height * 0.1 + i * 40;
+                drawCloud(x, y, 1 + i * 0.2);
+            }
+        }
+        
+        function drawCloud(x, y, scale) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            ctx.beginPath();
+            ctx.arc(0, 0, 30, 0, Math.PI * 2);
+            ctx.arc(25, -10, 25, 0, Math.PI * 2);
+            ctx.arc(50, 0, 30, 0, Math.PI * 2);
+            ctx.arc(25, 10, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        function drawDistantHills() {
+            ctx.fillStyle = '#2d4a3e';
+            for (let i = 0; i < 4; i++) {
+                const x = ((scrollX * 0.1 + i * 400) % (width + 400)) - 200;
+                const y = height * 0.55;
+                const amplitude = 30 + i * 10;
+                const frequency = 0.003 + i * 0.001;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                for (let px = x; px < x + 300; px += 5) {
+                    const py = y + Math.sin((px - x) * frequency) * amplitude;
+                    ctx.lineTo(px, py);
+                }
+                ctx.lineTo(x + 300, height);
+                ctx.lineTo(x, height);
+                ctx.fill();
+            }
+        }
+        
+        function drawNearbyTerrain() {
+            ctx.fillStyle = '#3d5a4e';
+            for (let i = 0; i < 6; i++) {
+                const x = ((scrollX * 0.3 + i * 250) % (width + 250)) - 125;
+                const y = height * 0.65;
+                const amplitude = 20 + i * 5;
+                const frequency = 0.005 + i * 0.001;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                for (let px = x; px < x + 200; px += 5) {
+                    const py = y + Math.sin((px - x) * frequency) * amplitude;
+                    ctx.lineTo(px, py);
+                }
+                ctx.lineTo(x + 200, height);
+                ctx.lineTo(x, height);
+                ctx.fill();
+            }
+        }
+        
+        function drawRoad() {
+            ctx.fillStyle = '#4a4a4a';
+            ctx.fillRect(0, height * 0.7, width, height * 0.3);
+            
+            ctx.fillStyle = '#5a5a5a';
+            ctx.fillRect(0, height * 0.7, width, 5);
+            
+            ctx.fillStyle = '#3a3a3a';
+            for (let i = 0; i < 20; i++) {
+                const x = ((scrollX * 0.5 + i * 80) % (width + 80)) - 40;
+                ctx.fillRect(x, height * 0.7 + 5, 3, 20);
+            }
+        }
+        
+        function drawPoles() {
+            ctx.fillStyle = '#2a2a2a';
+            for (let i = 0; i < 8; i++) {
+                const x = ((scrollX * 0.4 + i * 200) % (width + 200)) - 100;
+                const y = height * 0.7;
+                ctx.fillRect(x, y, 4, height * 0.3);
+                
+                ctx.fillStyle = '#ff4444';
+                ctx.fillRect(x - 2, y + 10, 8, 3);
+                ctx.fillStyle = '#2a2a2a';
+            }
+        }
+        
+        function drawTrees() {
+            for (let i = 0; i < 6; i++) {
+                const x = ((scrollX * 0.35 + i * 300) % (width + 300)) - 150;
+                const y = height * 0.68;
+                drawTree(x, y, 0.8 + i * 0.1);
+            }
+        }
+        
+        function drawTree(x, y, scale) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            
+            ctx.fillStyle = '#1a3a2a';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-20, -60);
+            ctx.lineTo(20, -60);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -60);
+            ctx.lineTo(-25, -120);
+            ctx.lineTo(25, -120);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -120);
+            ctx.lineTo(-20, -180);
+            ctx.lineTo(20, -180);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        function drawCar() {
+            const carX = width * 0.3;
+            const carY = height * 0.55;
+            
+            ctx.save();
+            ctx.translate(carX, carY);
+            
+            const bodyOffset = Math.sin(carBodyOffset) * 2;
+            ctx.translate(0, bodyOffset);
+            
+            const wheelRotation = wheelRotation % (Math.PI * 2);
+            
+            ctx.save();
+            ctx.translate(-80, 0);
+            drawWheel(wheelRotation);
+            ctx.restore();
+            
+            ctx.save();
+            ctx.translate(80, 0);
+            drawWheel(wheelRotation);
+            ctx.restore();
+            
+            drawCarBody();
+            drawWindows();
+            drawHeadlights();
+            drawTaillights();
+            
+            ctx.restore();
+        }
+        
+        function drawWheel(rotation) {
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(0, 0, 25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(0, 0, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, 15, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, 10, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.save();
+            ctx.rotate(rotation);
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(-20, 0);
+            ctx.lineTo(20, 0);
+            ctx.moveTo(0, -20);
+            ctx.lineTo(0, 20);
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        function drawCarBody() {
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.moveTo(-80, 0);
+            ctx.lineTo(-70, -30);
+            ctx.lineTo(20, -30);
+            ctx.lineTo(40, -50);
+            ctx.lineTo(100, -50);
+            ctx.lineTo(110, 0);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            ctx.moveTo(-70, -30);
+            ctx.lineTo(-60, -50);
+            ctx.lineTo(20, -50);
+            ctx.lineTo(30, -30);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.moveTo(40, -50);
+            ctx.lineTo(50, -70);
+            ctx.lineTo(100, -70);
+            ctx.lineTo(110, -50);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawWindows() {
+            ctx.fillStyle = '#87ceeb';
+            ctx.beginPath();
+            ctx.moveTo(-60, -28);
+            ctx.lineTo(-50, -45);
+            ctx.lineTo(15, -45);
+            ctx.lineTo(25, -28);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#87ceeb';
+            ctx.beginPath();
+            ctx.moveTo(45, -48);
+            ctx.lineTo(55, -65);
+            ctx.lineTo(95, -65);
+            ctx.lineTo(105, -48);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawHeadlights() {
+            ctx.fillStyle = '#fff9c4';
+            ctx.beginPath();
+            ctx.moveTo(105, -45);
+            ctx.lineTo(115, -45);
+            ctx.lineTo(115, -35);
+            ctx.lineTo(105, -35);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = 'rgba(255, 255, 200, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(105, -45);
+            ctx.lineTo(200, -80);
+            ctx.lineTo(200, -20);
+            ctx.lineTo(105, -35);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawTaillights() {
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.moveTo(-80, -5);
+            ctx.lineTo(-70, -5);
+            ctx.lineTo(-70, 5);
+            ctx.lineTo(-80, 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(-80, -5);
+            ctx.lineTo(-200, -20);
+            ctx.lineTo(-200, 20);
+            ctx.lineTo(-80, 5);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawSpeedLines() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 10; i++) {
+                const x = ((scrollX * 0.8 + i * 150) % (width + 150)) - 75;
+                const y = height * 0.75 + i * 15;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x - 30, y);
+                ctx.stroke();
+            }
+        }
+        
+        function animate() {
+            scrollX += speed;
+            carBodyOffset += 0.02;
+            wheelRotation += 0.15;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            drawSky();
+            drawSun();
+            drawClouds();
+            drawDistantHills();
+            drawNearbyTerrain();
+            drawRoad();
+            drawPoles();
+            drawTrees();
+            drawCar();
+            drawSpeedLines();
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
